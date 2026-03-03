@@ -2,5 +2,6 @@
 {
     public class Maintenance : User
     {
+        public bool IsAvailable { get; set; }
     }
 }
