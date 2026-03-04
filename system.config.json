@@ -1,0 +1,194 @@
+{
+  "system": {
+    "name": "Hibavonal",
+    "version": "1.0.0",
+    "description": "Role-Based Task Management System",
+    "type": "SPA (Single Page Application)"
+  },
+  "roles": [
+    {
+      "id": "egyetemista",
+      "name": "Egyetemista",
+      "displayName": "Student",
+      "description": "Students or users requesting maintenance",
+      "permissions": [
+        "view_tasks",
+        "submit_requests"
+      ],
+      "features": [
+        "View assigned tasks",
+        "Submit task requests",
+        "Track request status"
+      ]
+    },
+    {
+      "id": "karbantartas",
+      "name": "Karbantartó",
+      "displayName": "Maintenance Worker",
+      "description": "Field workers performing maintenance",
+      "permissions": [
+        "view_tasks",
+        "request_tools",
+        "submit_work_logs"
+      ],
+      "features": [
+        "View assigned maintenance tasks",
+        "Request tools for tasks",
+        "Submit work logs",
+        "Track tool request status"
+      ]
+    },
+    {
+      "id": "karbantartas_vezeto",
+      "name": "Karbantartási vezető",
+      "displayName": "Maintenance Manager",
+      "description": "Team leads and supervisors",
+      "permissions": [
+        "view_tasks",
+        "request_tools",
+        "manage_tool_requests",
+        "assign_tools",
+        "view_workers",
+        "view_reports"
+      ],
+      "features": [
+        "Manage and approve/reject tool requests",
+        "Assign tools to workers",
+        "View all team members",
+        "View reports and statistics",
+        "Filter requests by status"
+      ]
+    },
+    {
+      "id": "adminisztrator",
+      "name": "Adminisztrátor",
+      "displayName": "Administrator",
+      "description": "System administrators",
+      "permissions": [
+        "view_tasks",
+        "request_tools",
+        "manage_tool_requests",
+        "assign_tools",
+        "view_workers",
+        "view_reports",
+        "manage_users",
+        "manage_roles",
+        "system_settings",
+        "view_all_data"
+      ],
+      "features": [
+        "Full system access",
+        "User account management",
+        "Role assignment",
+        "System statistics",
+        "User directory",
+        "Audit logs",
+        "System configuration"
+      ]
+    }
+  ],
+  "permissions": {
+    "view_tasks": "Can view assigned or created tasks",
+    "submit_requests": "Can submit new requests",
+    "request_tools": "Can request tools for tasks",
+    "submit_work_logs": "Can submit work completion logs",
+    "manage_tool_requests": "Can approve/reject tool requests",
+    "assign_tools": "Can assign tools to workers",
+    "view_workers": "Can view team member information",
+    "view_reports": "Can view reports and statistics",
+    "manage_users": "Can create/delete users",
+    "manage_roles": "Can assign roles to users",
+    "system_settings": "Can access system configuration",
+    "view_all_data": "Can view all system data"
+  },
+  "database": {
+    "type": "localStorage (frontend) / MongoDB (recommended backend)",
+    "collections": {
+      "users": {
+        "fields": [
+          "id",
+          "email",
+          "password",
+          "name",
+          "role",
+          "createdAt"
+        ]
+      },
+      "tasks": {
+        "fields": [
+          "id",
+          "title",
+          "description",
+          "assignedTo",
+          "createdBy",
+          "status",
+          "createdAt"
+        ]
+      },
+      "toolRequests": {
+        "fields": [
+          "id",
+          "toolName",
+          "quantity",
+          "reason",
+          "requestedBy",
+          "status",
+          "approvedBy",
+          "createdAt",
+          "approvedAt"
+        ]
+      }
+    }
+  },
+  "features": {
+    "authentication": {
+      "enabled": true,
+      "type": "localStorage-based",
+      "methods": ["login", "register", "logout"]
+    },
+    "roleBasedAccess": {
+      "enabled": true,
+      "checkPermission": true,
+      "hideUnauthorizedUI": true
+    },
+    "dataManagement": {
+      "tasks": "CRUD operations",
+      "toolRequests": "Create and approve/reject",
+      "users": "Admin can create users"
+    },
+    "userInterface": {
+      "theme": "Modern gradient (purple)",
+      "responsive": true,
+      "darkModeSupported": false,
+      "mobileOptimized": true
+    }
+  },
+  "security": {
+    "currentImplementation": "Frontend demo with localStorage",
+    "productionRecommendations": [
+      "Implement server-side authentication",
+      "Use bcrypt for password hashing",
+      "Implement JWT tokens",
+      "Add HTTPS",
+      "Input validation and sanitization",
+      "Rate limiting",
+      "CORS protection",
+      "Audit logging"
+    ]
+  },
+  "deployment": {
+    "buildCommand": "npm build",
+    "startCommand": "npm start",
+    "productionBuild": "npm run build",
+    "requiredEnv": {
+      "REACT_APP_API_URL": "Backend API URL (optional)"
+    }
+  },
+  "documentation": {
+    "quickStart": "QUICKSTART.md",
+    "systemGuide": "README_SYSTEM.md",
+    "developerGuide": "DEVELOPER_GUIDE.md",
+    "apiReference": "API_REFERENCE.md",
+    "this_file": "system.config.json"
+  }
+}
