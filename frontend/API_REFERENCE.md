@@ -8,7 +8,7 @@ All functionality is accessed through the `useAuth()` hook:
 import { useAuth } from '../context/AuthContext';
 
 function MyComponent() {
-  const { user, login, hasPermission, createTask } = useAuth();
+  const { user, login, hasPermission, createTask, register, assignTask } = useAuth();
   // ... use the methods
 }
 ```
@@ -150,8 +150,9 @@ if (hasPermission('assign_tools')) {
 }
 ```
 
-### `createTask(title, description, assignedTo)`
-Create a new task.
+### `createTask(title, description, assignedTo, location, specialization)`
+
+This function now accepts optional **location** and **specialization** parameters. When reporting a fault, you can leave `assignedTo` empty and let a manager assign a worker later.Create a new task.
 
 ```javascript
 const task = createTask(
@@ -405,7 +406,7 @@ Always wrap AuthContext methods in try-catch:
 
 ```javascript
 try {
-  createTask(title, description, assignedTo);
+  createTask(title, description, assignedTo, location, specialization);
 } catch (error) {
   console.error('Task creation failed:', error.message);
   // Handle error (show toast, alert, etc.)

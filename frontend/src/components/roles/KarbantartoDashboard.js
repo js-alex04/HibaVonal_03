@@ -8,18 +8,21 @@ const KarbantartoDashboard = () => {
   const [quantity, setQuantity] = useState(1);
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
+  // predefined tool list for dropdown
+  const TOOL_OPTIONS = ['Drill', 'Hammer', 'Safety Harness', 'Wrench', 'Screwdriver'];
+
+  // generic sanitizer for text fields (no special characters)
+  const sanitizeText = (input) => {
+    return input.replace(/[^a-zA-Z0-9\s\-]/g, '');
+  };
 
   const myTasks = tasks.filter(t => t.assignedTo === user.id);
   const myToolRequests = toolRequests.filter(tr => tr.requestedBy === user.id);
 
-  // Sanitize tool name - only allow letters, numbers, spaces, hyphens
-  const sanitizeToolName = (input) => {
-    return input.replace(/[^a-zA-Z0-9\s\-]/g, '');
-  };
-
-  // Sanitize reason - allow letters, numbers, spaces, periods, commas, hyphens
+  // we no longer free‑type tool name, using dropdown so sanitization not needed here
+  // Sanitize reason - allow letters, numbers, spaces and hyphens only
   const sanitizeReason = (input) => {
-    return input.replace(/[<>\"]/g, '');
+    return input.replace(/[^a-zA-Z0-9\s\-]/g, '');
   };
 
   const handleRequestTool = (e) => {
@@ -81,6 +84,8 @@ const KarbantartoDashboard = () => {
                 <div key={task.id} className="task-card">
                   <h3>{task.title}</h3>
                   <p>{task.description}</p>
+                  {task.location && <p><strong>Location:</strong> {task.location}</p>}
+                  {task.specialization && <p><strong>Specialist:</strong> {task.specialization}</p>}
                   <span className={`status-badge status-${task.status}`}>{task.status}</span>
                   <small>{new Date(task.createdAt).toLocaleDateString()}</small>
                 </div>
@@ -97,14 +102,16 @@ const KarbantartoDashboard = () => {
 
               <div className="form-group">
                 <label>Tool Name</label>
-                <input
-                  type="text"
+                <select
                   value={toolName}
-                  onChange={(e) => setToolName(sanitizeToolName(e.target.value))}
-                  placeholder="e.g., Drill, Hammer, Safety Harness"
+                  onChange={(e) => setToolName(e.target.value)}
                   required
-                />
-                <small className="form-hint">Min 2 characters (letters, numbers, spaces, hyphens only)</small>
+                >
+                  <option value="">-- select a tool --</option>
+                  {TOOL_OPTIONS.map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="form-group">
@@ -127,7 +134,7 @@ const KarbantartoDashboard = () => {
                   rows="4"
                   required
                 />
-                <small className="form-hint">Min 5 characters</small>
+                <small className="form-hint">Min 5 characters (no special chars)</small>
               </div>
 
               <button type="submit" className="btn-primary">

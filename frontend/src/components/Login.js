@@ -9,6 +9,8 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [role, setRole] = useState(ROLES.EGYETEMISTA);
+  const [specialization, setSpecialization] = useState('');
+  const SPECIALIZATIONS = ['Fűtés', 'Viz-Gáz', 'Villany', 'Egyéb'];
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -42,12 +44,12 @@ const Login = () => {
           return;
         }
 
-        if (name.length < 2) {
-          setError('Name must be at least 2 characters long');
+        if (name.length < 2 || !/[a-zA-Z0-9]/.test(name)) {
+          setError('Name must be at least 2 characters long and include letters or numbers');
           return;
         }
 
-        register(email, password, name.trim(), role);
+        register(email, password, name.trim(), role, specialization);
         setSuccess('Registration successful! Please login.');
         setIsLogin(true);
         setEmail('');
@@ -71,7 +73,7 @@ const Login = () => {
     return input.replace(/[^a-zA-Z0-9@.\-_]/g, '').trim();
   };
 
-  // Sanitize name - only allow letters, numbers, spaces, hyphens
+  // Sanitize name - allowed letters, numbers, spaces, hyphens only
   const sanitizeName = (input) => {
     return input.replace(/[^a-zA-Z0-9\s\-]/g, '');
   };
@@ -153,6 +155,17 @@ const Login = () => {
                   <option value={ROLES.ADMINISZTRATOR}>{ROLES.ADMINISZTRATOR}</option>
                 </select>
               </div>
+              {role === ROLES.KARBANTARTAS && (
+                <div className="form-group">
+                  <label>Specialization</label>
+                  <select value={specialization} onChange={(e) => setSpecialization(e.target.value)} required>
+                    <option value="">-- choose --</option>
+                    {SPECIALIZATIONS.map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </>
           )}
 

@@ -171,14 +171,14 @@ Each role has its specialized dashboard with:
 ```javascript
 // Authentication
 login(email, password)           // Login user
-register(email, password, name, role)  // Register new user
+register(email, password, name, role, specialization?)  // Register new user (specification required for maintenance workers)
 logout()                          // Logout current user
 
 // Permissions
 hasPermission(permission)         // Check user permission
 
 // Task Management
-createTask(title, description, assignedTo)
+createTask(title, description, assignedTo, location, specialization)  // assignedTo is optional; use assignTask later to allocate a worker
 createToolRequest(toolName, quantity, reason, requestedBy)
 
 // Request Management
