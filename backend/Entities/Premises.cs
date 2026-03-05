@@ -1,8 +1,14 @@
 ﻿namespace HibaVonal_03.Entities
 {
-    public class Premises
+    public abstract class Premises
     {
         public int Id { get; set; }
-        public string Name { get; set; } = null!;
+        public int Floor { get; set; }
+        public List<Appliance> appliances { get; set; } = new();
+        public Premises(int id, int floor)
+        {
+            Id = id;
+            Floor = floor;
+        }
     }
 }

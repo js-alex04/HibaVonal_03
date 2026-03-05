@@ -2,6 +2,14 @@
 {
     public class Collegiate : User
     {
+        public PrivateRoom DormRoom { get; set; }
+        public List<Fault> ReportedFaults { get; set; } = new();
+        public List<Feedback> Feedbacks { get; set; } = new();
+        public Collegiate(int id, string name, string email, string password, PrivateRoom room) : base(id, name, email, password)
+        {
+            DormRoom = room;
+        }
+
         public void ReportFault()
         {
 

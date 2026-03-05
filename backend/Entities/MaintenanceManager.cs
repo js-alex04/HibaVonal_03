@@ -2,15 +2,19 @@
 {
     public class MaintenanceManager : User
     {
+        public MaintenanceManager(int id, string name, string email, string password) : base(id, name, email, password)
+        {
+        }
+
         public List<Fault> CheckFaultFeedbacks()
         {
             return null;
         }
-        public List<Maintenance> ListMaintenance()
+        public List<Maintainer> ListMaintenance()
         {
             return null;
         }
-        public void AssignFaultToMaintenance(Fault fault, Maintenance maintenance)
+        public void AssignFaultToMaintenance(Fault fault, Maintainer maintenance)
         {
 
         }

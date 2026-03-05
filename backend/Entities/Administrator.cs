@@ -2,6 +2,10 @@
 {
     public class Administrator : User
     {
+        public Administrator(int id, string name, string email, string password) : base(id, name, email, password)
+        {
+        }
+
         public void AddFaultType(string typeName)
         {
 
