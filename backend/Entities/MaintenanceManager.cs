@@ -2,7 +2,8 @@
 {
     public class MaintenanceManager : User
     {
-        public MaintenanceManager(int id, string name, string email, string password) : base(id, name, email, password)
+        protected MaintenanceManager() : base() { } // Parameterless constructor for EF Core
+        public MaintenanceManager(int id, string name, string email, string password) : base(id, name, email, password, Role.MaintenanceManager)
         {
         }
 

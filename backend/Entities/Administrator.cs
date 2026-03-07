@@ -2,7 +2,8 @@
 {
     public class Administrator : User
     {
-        public Administrator(int id, string name, string email, string password) : base(id, name, email, password)
+        protected Administrator() : base() { } // Parameterless constructor for EF Core
+        public Administrator(int id, string name, string email, string password) : base(id, name, email, password, Role.Administrator)
         {
         }
 

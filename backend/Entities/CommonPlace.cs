@@ -1,9 +1,11 @@
 ﻿namespace HibaVonal_03.Entities
 {
-    public class CommonPlace : Premises
+    public class CommonPlace : Premise
     {
         public string Name { get; set; } = null!;
-        public CommonPlace(int id, int floor, string name) : base(id, floor)
+
+        protected CommonPlace() : base() { } // Parameterless constructor for EF Core
+        public CommonPlace(int id, int floor, string name) : base(id, floor, PremiseType.CommonPlace)
         {
             this.Name = name;
         }
