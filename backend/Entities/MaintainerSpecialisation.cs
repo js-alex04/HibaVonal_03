@@ -1,4 +1,6 @@
-﻿namespace HibaVonal_03.Entities
+﻿using System.ComponentModel.DataAnnotations; 
+
+namespace HibaVonal_03.Entities
 {
     public class MaintainerSpecialisation
     {
