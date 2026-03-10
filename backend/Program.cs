@@ -16,6 +16,17 @@ namespace HibaVonal_03
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
 
+            // React frontend build folder configuration
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowReactFrontend", policy =>
+                {
+                    policy.WithOrigins("http://localhost:3000") // frontend's port
+                          .AllowAnyHeader()
+                          .AllowAnyMethod();
+                });
+            });
+
             builder.Services.AddDbContext<HibaVonalDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))); // Use SQL Server as the database provider, with the connection string from appsettings.json
 
@@ -52,6 +63,9 @@ namespace HibaVonal_03
             }
 
             app.UseHttpsRedirection();
+
+            // Enable CORS for the React frontend
+            app.UseCors("AllowReactFrontend");
 
             app.UseAuthorization();
 
