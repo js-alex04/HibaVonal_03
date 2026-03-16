@@ -13,8 +13,9 @@ namespace HibaVonal_03
             // Add services to the container.
 
             builder.Services.AddControllers();
-            // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-            builder.Services.AddOpenApi();
+
+            builder.Services.AddEndpointsApiExplorer(); // Ez segít a Swaggernek feltérképezni a végpontokat
+            builder.Services.AddSwaggerGen();           // Ez generálja a Swagger dokumentációt
 
             // React frontend build folder configuration
             builder.Services.AddCors(options =>
@@ -59,7 +60,8 @@ namespace HibaVonal_03
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
-                app.MapOpenApi();
+                app.UseSwagger();   // Létrehozza a JSON fájlt
+                app.UseSwaggerUI(); // Létrehozza a gyönyörű grafikus weboldalt
             }
 
             app.UseHttpsRedirection();
