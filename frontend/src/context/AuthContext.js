@@ -1,47 +1,47 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect } from "react";
 
 const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
+    throw new Error("useAuth must be used within AuthProvider");
   }
   return context;
 };
 
 const ROLES = {
-  EGYETEMISTA: 'Egyetemista',
-  KARBANTARTAS: 'Karbantartó',
-  KARBANTARTAS_VEZETO: 'Karbantartási vezető',
-  ADMINISZTRATOR: 'Adminisztrátor'
+  EGYETEMISTA: "Egyetemista",
+  KARBANTARTAS: "Karbantartó",
+  KARBANTARTAS_VEZETO: "Karbantartási vezető",
+  ADMINISZTRATOR: "Adminisztrátor",
 };
 
 const ROLE_PERMISSIONS = {
-  [ROLES.EGYETEMISTA]: ['view_tasks', 'submit_requests'],
-  [ROLES.KARBANTARTAS]: ['view_tasks', 'request_tools', 'submit_work_logs'],
+  [ROLES.EGYETEMISTA]: ["view_tasks", "submit_requests"],
+  [ROLES.KARBANTARTAS]: ["view_tasks", "request_tools", "submit_work_logs"],
   [ROLES.KARBANTARTAS_VEZETO]: [
-    'view_tasks',
-    'request_tools',
-    'manage_tool_requests',
-    'assign_tools',
-    'assign_tasks',
-    'view_workers',
-    'view_reports'
+    "view_tasks",
+    "request_tools",
+    "manage_tool_requests",
+    "assign_tools",
+    "assign_tasks",
+    "view_workers",
+    "view_reports",
   ],
   [ROLES.ADMINISZTRATOR]: [
-    'view_tasks',
-    'request_tools',
-    'manage_tool_requests',
-    'assign_tools',
-    'assign_tasks',
-    'view_workers',
-    'view_reports',
-    'manage_users',
-    'manage_roles',
-    'system_settings',
-    'view_all_data'
-  ]
+    "view_tasks",
+    "request_tools",
+    "manage_tool_requests",
+    "assign_tools",
+    "assign_tasks",
+    "view_workers",
+    "view_reports",
+    "manage_users",
+    "manage_roles",
+    "system_settings",
+    "view_all_data",
+  ],
 };
 
 export const AuthProvider = ({ children }) => {
@@ -54,20 +54,23 @@ export const AuthProvider = ({ children }) => {
 
   // Initialize database from localStorage
   useEffect(() => {
-    const savedUsers = localStorage.getItem('hibavonal_users');
-    const savedToolRequests = localStorage.getItem('hibavonal_tool_requests');
-    const savedTasks = localStorage.getItem('hibavonal_tasks');
-    const savedEquipment = localStorage.getItem('hibavonal_equipment');
-    const savedEquipmentOrders = localStorage.getItem('hibavonal_equipment_orders');
+    const savedUsers = localStorage.getItem("hibavonal_users");
+    const savedToolRequests = localStorage.getItem("hibavonal_tool_requests");
+    const savedTasks = localStorage.getItem("hibavonal_tasks");
+    const savedEquipment = localStorage.getItem("hibavonal_equipment");
+    const savedEquipmentOrders = localStorage.getItem(
+      "hibavonal_equipment_orders",
+    );
 
     if (savedUsers) setUsers(JSON.parse(savedUsers));
     if (savedToolRequests) setToolRequests(JSON.parse(savedToolRequests));
     if (savedTasks) setTasks(JSON.parse(savedTasks));
     if (savedEquipment) setEquipment(JSON.parse(savedEquipment));
-    if (savedEquipmentOrders) setEquipmentOrders(JSON.parse(savedEquipmentOrders));
+    if (savedEquipmentOrders)
+      setEquipmentOrders(JSON.parse(savedEquipmentOrders));
 
     // Check if user is already logged in
-    const savedUser = localStorage.getItem('hibavonal_current_user');
+    const savedUser = localStorage.getItem("hibavonal_current_user");
     if (savedUser) {
       setUser(JSON.parse(savedUser));
     }
@@ -75,36 +78,42 @@ export const AuthProvider = ({ children }) => {
 
   // Save users to localStorage
   useEffect(() => {
-    localStorage.setItem('hibavonal_users', JSON.stringify(users));
+    localStorage.setItem("hibavonal_users", JSON.stringify(users));
   }, [users]);
 
   // Save tool requests to localStorage
   useEffect(() => {
-    localStorage.setItem('hibavonal_tool_requests', JSON.stringify(toolRequests));
+    localStorage.setItem(
+      "hibavonal_tool_requests",
+      JSON.stringify(toolRequests),
+    );
   }, [toolRequests]);
 
   // Save tasks to localStorage
   useEffect(() => {
-    localStorage.setItem('hibavonal_tasks', JSON.stringify(tasks));
+    localStorage.setItem("hibavonal_tasks", JSON.stringify(tasks));
   }, [tasks]);
 
   // Save equipment to localStorage
   useEffect(() => {
-    localStorage.setItem('hibavonal_equipment', JSON.stringify(equipment));
+    localStorage.setItem("hibavonal_equipment", JSON.stringify(equipment));
   }, [equipment]);
 
   // Save equipment orders to localStorage
   useEffect(() => {
-    localStorage.setItem('hibavonal_equipment_orders', JSON.stringify(equipmentOrders));
+    localStorage.setItem(
+      "hibavonal_equipment_orders",
+      JSON.stringify(equipmentOrders),
+    );
   }, [equipmentOrders]);
 
   // sanitize helper for names/emails - only allow letters, numbers, spaces, hyphens
   const sanitizeInput = (input) => {
-    if (!input || typeof input !== 'string') return input;
-    return input.replace(/[^a-zA-Z0-9\s\-]/g, '').trim();
+    if (!input || typeof input !== "string") return input;
+    return input.replace(/[^a-zA-Z0-9\s\-]/g, "").trim();
   };
 
-  const register = (email, password, name, role, specialization = '') => {
+  const register = (email, password, name, role, specialization = "") => {
     // Only sanitize name and specialization (Login.js already sanitizes email)
     name = sanitizeInput(name);
     specialization = sanitizeInput(specialization);
@@ -112,22 +121,24 @@ export const AuthProvider = ({ children }) => {
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      throw new Error('Invalid email format');
+      throw new Error("Invalid email format");
     }
 
     // Validate password length
     if (!password || password.length < 4) {
-      throw new Error('Password must be at least 4 characters long');
+      throw new Error("Password must be at least 4 characters long");
     }
 
     // Validate name has at least one alphanumeric character and length
     if (!name || name.trim().length < 2 || !/[a-zA-Z0-9]/.test(name)) {
-      throw new Error('Name must be at least 2 characters long and contain letters or numbers');
+      throw new Error(
+        "Name must be at least 2 characters long and contain letters or numbers",
+      );
     }
 
-    const existingUser = users.find(u => u.email === email);
+    const existingUser = users.find((u) => u.email === email);
     if (existingUser) {
-      throw new Error('User already exists');
+      throw new Error("User already exists");
     }
 
     const newUser = {
@@ -136,8 +147,8 @@ export const AuthProvider = ({ children }) => {
       password, // Note: In production, use bcrypt or similar
       name: name.trim(),
       role,
-      specialization: role === ROLES.KARBANTARTAS ? specialization : '',
-      createdAt: new Date().toISOString()
+      specialization: role === ROLES.KARBANTARTAS ? specialization : "",
+      createdAt: new Date().toISOString(),
     };
 
     setUsers([...users, newUser]);
@@ -145,18 +156,20 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = (email, password) => {
-    const foundUser = users.find(u => u.email === email && u.password === password);
+    const foundUser = users.find(
+      (u) => u.email === email && u.password === password,
+    );
     if (!foundUser) {
-      throw new Error('Invalid email or password');
+      throw new Error("Invalid email or password");
     }
 
-    localStorage.setItem('hibavonal_current_user', JSON.stringify(foundUser));
+    localStorage.setItem("hibavonal_current_user", JSON.stringify(foundUser));
     setUser(foundUser);
     return foundUser;
   };
 
   const logout = () => {
-    localStorage.removeItem('hibavonal_current_user');
+    localStorage.removeItem("hibavonal_current_user");
     setUser(null);
   };
 
@@ -167,39 +180,50 @@ export const AuthProvider = ({ children }) => {
   };
 
   const assignTask = (taskId, assigneeId) => {
-    if (!hasPermission('assign_tasks')) {
-      throw new Error('Permission denied');
+    if (!hasPermission("assign_tasks")) {
+      throw new Error("Permission denied");
     }
     setTasks(
-      tasks.map(t =>
+      tasks.map((t) =>
         t.id === taskId
-          ? { ...t, assignedTo: assigneeId, status: 'assigned' }
-          : t
-      )
+          ? { ...t, assignedTo: assigneeId, status: "assigned" }
+          : t,
+      ),
     );
   };
 
   const updateTaskStatus = (taskId, isCompleted) => {
     setTasks(
-      tasks.map(t =>
+      tasks.map((t) =>
         t.id === taskId
-          ? { ...t, completed: isCompleted, status: isCompleted ? 'completed' : 'in_progress', completedAt: isCompleted ? new Date().toISOString() : null }
-          : t
-      )
+          ? {
+              ...t,
+              completed: isCompleted,
+              status: isCompleted ? "completed" : "in_progress",
+              completedAt: isCompleted ? new Date().toISOString() : null,
+            }
+          : t,
+      ),
     );
   };
 
-  const createTask = (title, description, assignedTo = '', location, specialization) => {
+  const createTask = (
+    title,
+    description,
+    assignedTo = "",
+    location,
+    specialization,
+  ) => {
     const newTask = {
       id: Date.now().toString(),
       title: sanitizeInput(title),
       description: sanitizeInput(description),
       location: sanitizeInput(location),
       specialization: sanitizeInput(specialization),
-      assignedTo: assignedTo || '',
-      createdBy: user?.id || '',
-      status: 'pending',
-      createdAt: new Date().toISOString()
+      assignedTo: assignedTo || "",
+      createdBy: user?.id || "",
+      status: "pending",
+      createdAt: new Date().toISOString(),
     };
 
     setTasks([...tasks, newTask]);
@@ -213,9 +237,9 @@ export const AuthProvider = ({ children }) => {
       quantity,
       reason,
       requestedBy,
-      status: 'pending',
+      status: "pending",
       approvedBy: null,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
 
     setToolRequests([...toolRequests, newRequest]);
@@ -223,30 +247,40 @@ export const AuthProvider = ({ children }) => {
   };
 
   const approveToolRequest = (requestId) => {
-    if (!hasPermission('assign_tools')) {
-      throw new Error('Permission denied');
+    if (!hasPermission("assign_tools")) {
+      throw new Error("Permission denied");
     }
 
     setToolRequests(
-      toolRequests.map(req =>
+      toolRequests.map((req) =>
         req.id === requestId
-          ? { ...req, status: 'approved', approvedBy: user.id, approvedAt: new Date().toISOString() }
-          : req
-      )
+          ? {
+              ...req,
+              status: "approved",
+              approvedBy: user.id,
+              approvedAt: new Date().toISOString(),
+            }
+          : req,
+      ),
     );
   };
 
   const rejectToolRequest = (requestId) => {
-    if (!hasPermission('assign_tools')) {
-      throw new Error('Permission denied');
+    if (!hasPermission("assign_tools")) {
+      throw new Error("Permission denied");
     }
 
     setToolRequests(
-      toolRequests.map(req =>
+      toolRequests.map((req) =>
         req.id === requestId
-          ? { ...req, status: 'rejected', approvedBy: user.id, rejectedAt: new Date().toISOString() }
-          : req
-      )
+          ? {
+              ...req,
+              status: "rejected",
+              approvedBy: user.id,
+              rejectedAt: new Date().toISOString(),
+            }
+          : req,
+      ),
     );
   };
 
@@ -257,7 +291,7 @@ export const AuthProvider = ({ children }) => {
       name: sanitizeInput(name),
       quantity: parseInt(quantity),
       minQuantity: parseInt(minQuantity) || 5,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
     setEquipment([...equipment, newEquipment]);
     return newEquipment;
@@ -265,20 +299,18 @@ export const AuthProvider = ({ children }) => {
 
   const updateEquipmentQuantity = (equipmentId, quantity) => {
     setEquipment(
-      equipment.map(eq =>
-        eq.id === equipmentId
-          ? { ...eq, quantity: parseInt(quantity) }
-          : eq
-      )
+      equipment.map((eq) =>
+        eq.id === equipmentId ? { ...eq, quantity: parseInt(quantity) } : eq,
+      ),
     );
   };
 
   const deleteEquipment = (equipmentId) => {
-    setEquipment(equipment.filter(eq => eq.id !== equipmentId));
+    setEquipment(equipment.filter((eq) => eq.id !== equipmentId));
   };
 
   const getLowStockEquipment = () => {
-    return equipment.filter(eq => eq.quantity <= eq.minQuantity);
+    return equipment.filter((eq) => eq.quantity <= eq.minQuantity);
   };
 
   // Equipment Orders (from manager to admin)
@@ -290,8 +322,8 @@ export const AuthProvider = ({ children }) => {
       reason: sanitizeInput(reason),
       requestedBy: user.id,
       requestedByName: user.name,
-      status: 'pending',
-      createdAt: new Date().toISOString()
+      status: "pending",
+      createdAt: new Date().toISOString(),
     };
     setEquipmentOrders([...equipmentOrders, newOrder]);
     return newOrder;
@@ -299,29 +331,39 @@ export const AuthProvider = ({ children }) => {
 
   const approveEquipmentOrder = (orderId) => {
     setEquipmentOrders(
-      equipmentOrders.map(order =>
+      equipmentOrders.map((order) =>
         order.id === orderId
-          ? { ...order, status: 'approved', approvedBy: user.id, approvedAt: new Date().toISOString() }
-          : order
-      )
+          ? {
+              ...order,
+              status: "approved",
+              approvedBy: user.id,
+              approvedAt: new Date().toISOString(),
+            }
+          : order,
+      ),
     );
   };
 
   const rejectEquipmentOrder = (orderId) => {
     setEquipmentOrders(
-      equipmentOrders.map(order =>
+      equipmentOrders.map((order) =>
         order.id === orderId
-          ? { ...order, status: 'rejected', approvedBy: user.id, rejectedAt: new Date().toISOString() }
-          : order
-      )
+          ? {
+              ...order,
+              status: "rejected",
+              approvedBy: user.id,
+              rejectedAt: new Date().toISOString(),
+            }
+          : order,
+      ),
     );
   };
 
   // Delete completed task
   const deleteTask = (taskId) => {
-    const task = tasks.find(t => t.id === taskId);
+    const task = tasks.find((t) => t.id === taskId);
     if (task && task.completed) {
-      setTasks(tasks.filter(t => t.id !== taskId));
+      setTasks(tasks.filter((t) => t.id !== taskId));
     }
   };
 
@@ -350,7 +392,7 @@ export const AuthProvider = ({ children }) => {
     createEquipmentOrder,
     approveEquipmentOrder,
     rejectEquipmentOrder,
-    ROLES
+    ROLES,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
