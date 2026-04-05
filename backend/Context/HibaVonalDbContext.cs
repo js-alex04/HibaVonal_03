@@ -5,17 +5,13 @@ namespace HibaVonal_03.Context
 {
     public class HibaVonalDbContext : DbContext
     {
-        public DbSet<Administrator> Administrators { get; set; }
         public DbSet<Appliance> Appliances { get; set; }
         public DbSet<Collegiate> Collegiates { get; set; }
-        public DbSet<CommonPlace> CommonPlaces { get; set; }
         public DbSet<Fault> Faults { get; set; }
         public DbSet<Feedback> Feedbacks { get; set; }
         public DbSet<Maintainer> Maintainers { get; set; }
         public DbSet<MaintainerSpecialisation> MaintainerSpecialisations { get; set; }
-        public DbSet<MaintenanceManager> MaintenanceManagers { get; set; }
         public DbSet<Premise> Premises { get; set; }
-        public DbSet<PrivateRoom> PrivateRooms { get; set; }
         public DbSet<ToolOrder> ToolOrders { get; set; }
         public DbSet<User> Users { get; set; }
 
@@ -27,19 +23,15 @@ namespace HibaVonal_03.Context
                 .HasDiscriminator(u => u.Role) // Use the Role property to determine the type of user
                 .HasValue<Collegiate>(Role.Collegiate) // Collegiate users will have Role = Collegiate
                 .HasValue<Maintainer>(Role.Maintainer) // Maintainer users will have Role = Maintainer
-                .HasValue<MaintenanceManager>(Role.MaintenanceManager) // Maintenance Manager users will have Role = MaintenanceManager
-                .HasValue<Administrator>(Role.Administrator); // Administrator users will have Role = Administrator
+                .HasValue<User>(Role.MaintenanceManager) // Maintenance Manager users will be standard Users
+                .HasValue<User>(Role.Administrator); // Administrator users will be standard Users
 
             modelBuilder.Entity<Collegiate>()
                 .HasOne(c => c.DormRoom) // a collegiate has one dorm room
                 .WithMany(r => r.Residents) // a dorm room can have multiple residents (collegiates)
                 .HasForeignKey(c => c.DormRoomId); // the key between the two tables
 
-            // Configure the Premise entity to use Table-Per-Hierarchy (TPH) inheritance
-            modelBuilder.Entity<Premise>()
-                .HasDiscriminator(p => p.Type) // Use the Type property to determine the type of premise
-                .HasValue<PrivateRoom>(PremiseType.PrivateRoom) // Private rooms will have Type = PrivateRoom
-                .HasValue<CommonPlace>(PremiseType.CommonPlace); // Common places will have Type = CommonPlace
+            // THE PREMISE TPH CONFIGURATION WAS DELETED HERE BECAUSE PREMISE NO LONGER HAS DERIVED CLASSES
 
             //Collegiate and Fault one-to-many relationship
             modelBuilder.Entity<Fault>()

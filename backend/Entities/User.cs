@@ -7,7 +7,7 @@
         Administrator,
         MaintenanceManager
     }
-    public abstract class User
+    public class User
     {
         public int Id { get; set; }
         public string Name { get; set; } = null!;
@@ -16,7 +16,7 @@
         public Role Role { get; set; }
 
         protected User() { } // Parameterless constructor for EF Core
-        protected User(int id, string name, string email, string password, Role role)
+        public User(int id, string name, string email, string password, Role role)
         {
             Id = id;
             Name = name;

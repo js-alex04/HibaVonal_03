@@ -71,7 +71,6 @@ namespace HibaVonal_03
 
             app.UseAuthorization();
 
-
             app.MapControllers();
 
             app.Run();

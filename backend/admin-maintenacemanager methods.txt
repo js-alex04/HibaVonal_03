@@ -1,13 +1,25 @@
-﻿namespace HibaVonal_03.Entities
-{
-    public class MaintenanceManager : User
-    {
-        protected MaintenanceManager() : base() { } // Parameterless constructor for EF Core
-        public MaintenanceManager(int id, string name, string email, string password) : base(id, name, email, password, Role.MaintenanceManager)
+admin:
+
+public void AddFaultType(string typeName)
         {
+
+        }
+        public void RemoveFaultType(int typeId)
+        {
+
+        }
+        public void AddEquipment(string equipName)
+        {
+
+        }
+        public void RemoveEquipment(int equipId)
+        {
+
         }
 
-        public List<Fault> CheckFaultFeedbacks()
+maintenance manager:
+
+public List<Fault> CheckFaultFeedbacks()
         {
             return null;
         }
@@ -27,5 +39,3 @@
         {
             return null;
         }
-    }
-}

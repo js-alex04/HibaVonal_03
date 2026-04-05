@@ -24,19 +24,23 @@ namespace HibaVonal_03.Data
 
             context.MaintainerSpecialisations.AddRange(vizvezetekSzerelo, villanyszerelo, asztalos);
 
-            // --- 2. Helyszínek (Szobák és Közös helyiségek) ---
-            // ID-nak nullát adunk, mert a SQL Server IDENTITY oszlopa automatikusan ad majd neki számot
-            var room101 = new PrivateRoom(0, 1, 101);
-            var room102 = new PrivateRoom(0, 1, 102);
-            var kitchen = new CommonPlace(0, 1, "Földszinti Közösségi Konyha");
+            // --- 2. Helyszínek (Egységes Premise osztály használata) ---
+            // ID-nak nullát adunk, mert a SQL Server IDENTITY oszlopa automatikusan ad majd neki számot.
+            // A 3. paraméter az enum, a 4. paraméter pedig a szobaszám/név stringként.
+            var room101 = new Premise(0, 1, PremiseType.PrivateRoom, "101");
+            var room102 = new Premise(0, 1, PremiseType.PrivateRoom, "102");
+            var kitchen = new Premise(0, 1, PremiseType.CommonPlace, "Földszinti Közösségi Konyha");
 
             context.Premises.AddRange(room101, room102, kitchen);
 
             // --- 3. Felhasználók (Admin, Karbantartó, Kollégista) ---
-            var admin = new Administrator(0, "Fő Admin", "admin@hibavonal.hu", "admin123");
+
+            // Az Admin most már egy sima User, Role.Administrator jogosultsággal!
+            var admin = new User(0, "Fő Admin", "admin@hibavonal.hu", "admin123", Role.Administrator);
 
             var maintainer = new Maintainer(0, "Kovács Szaki", "szaki@hibavonal.hu", "szaki123", true, new List<MaintainerSpecialisation> { vizvezetekSzerelo, villanyszerelo });
 
+            // A Collegiate most már a Premise típusú szobát kapja meg
             var collegiate = new Collegiate(0, "Teszt Hallgató", "hallgato@hibavonal.hu", "hallgato123", room101);
 
             context.Users.AddRange(admin, maintainer, collegiate);
