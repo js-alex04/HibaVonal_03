@@ -1,9 +1,9 @@
 ﻿using HibaVonal_03.DTOs.Auth;
+using HibaVonal_03.Interfaces.Auth;
 using HibaVonal_03.Repositories;
-using HibaVonal_03.Services.Interfaces;
 using System.Linq;
 
-namespace HibaVonal_03.Services
+namespace HibaVonal_03.Services.Auth
 {
     public class AuthService : IAuthService
     {

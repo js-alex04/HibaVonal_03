@@ -1,6 +1,6 @@
-﻿namespace HibaVonal_03.Entities
+﻿namespace HibaVonal_03.DTOs.ToolOrder
 {
-    public class ToolOrder
+    public class ToolOrderResponseDto
     {
         public int Id { get; set; }
         public int FaultId { get; set; }
