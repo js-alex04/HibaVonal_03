@@ -1,6 +1,8 @@
 using HibaVonal_03.Context;
+using HibaVonal_03.Interfaces.Fault;
 using HibaVonal_03.Interfaces.ToolOrder;
 using HibaVonal_03.Repositories;
+using HibaVonal_03.Services.Fault;
 using HibaVonal_03.Services.ToolOrder;
 using Microsoft.EntityFrameworkCore;
 
@@ -31,16 +33,19 @@ namespace HibaVonal_03
             });
 
             builder.Services.AddDbContext<HibaVonalDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))); // Use SQL Server as the database provider, with the connection string from appsettings.json
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))); // Use SQL Server as the database provider, with the connection string from appsettings.
+
+            // we register the FaultService (IFaultService and FaultService) with the dependency injection container
+            builder.Services.AddScoped<IFaultService, FaultService>();
+
+            // we register the ToolOrderService (IToolOrderService and ToolOrderService) with the dependency injection container
+            builder.Services.AddScoped<IToolOrderService, ToolOrderService>();
 
             // we register the generic repository (IRepository<T> and Repository<T>) with the dependency injection container
             builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 
             // we register the UnitOfWork (IUnitOfWork and UnitOfWork) with the dependency injection container
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-            // we register the ToolOrderService (IToolOrderService and ToolOrderService) with the dependency injection container
-            builder.Services.AddScoped<IToolOrderService, ToolOrderService>();
 
             var app = builder.Build();
 
