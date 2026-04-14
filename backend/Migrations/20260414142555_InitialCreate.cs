@@ -32,28 +32,11 @@ namespace HibaVonal_03.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Floor = table.Column<int>(type: "int", nullable: false),
                     Type = table.Column<int>(type: "int", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    RoomNumber = table.Column<int>(type: "int", nullable: true)
+                    NameOrNumber = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Premises", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ToolOrders",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ToolName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Quantity = table.Column<int>(type: "int", nullable: false),
-                    IsDelivered = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ToolOrders", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -149,23 +132,23 @@ namespace HibaVonal_03.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "MaintainerProfessions",
+                name: "MaintainerSpecialisationAssignments",
                 columns: table => new
                 {
                     MaintainersId = table.Column<int>(type: "int", nullable: false),
-                    MaintenanceProfessionsId = table.Column<int>(type: "int", nullable: false)
+                    MaintenanceSpecialisationId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_MaintainerProfessions", x => new { x.MaintainersId, x.MaintenanceProfessionsId });
+                    table.PrimaryKey("PK_MaintainerSpecialisationAssignments", x => new { x.MaintainersId, x.MaintenanceSpecialisationId });
                     table.ForeignKey(
-                        name: "FK_MaintainerProfessions_MaintainerSpecialisations_MaintenanceProfessionsId",
-                        column: x => x.MaintenanceProfessionsId,
+                        name: "FK_MaintainerSpecialisationAssignments_MaintainerSpecialisations_MaintenanceSpecialisationId",
+                        column: x => x.MaintenanceSpecialisationId,
                         principalTable: "MaintainerSpecialisations",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_MaintainerProfessions_Users_MaintainersId",
+                        name: "FK_MaintainerSpecialisationAssignments_Users_MaintainersId",
                         column: x => x.MaintainersId,
                         principalTable: "Users",
                         principalColumn: "Id",
@@ -198,6 +181,29 @@ namespace HibaVonal_03.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ToolOrders",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FaultId = table.Column<int>(type: "int", nullable: false),
+                    ToolName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsDelivered = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ToolOrders", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ToolOrders_Faults_FaultId",
+                        column: x => x.FaultId,
+                        principalTable: "Faults",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -241,9 +247,14 @@ namespace HibaVonal_03.Migrations
                 column: "FaultId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_MaintainerProfessions_MaintenanceProfessionsId",
-                table: "MaintainerProfessions",
-                column: "MaintenanceProfessionsId");
+                name: "IX_MaintainerSpecialisationAssignments_MaintenanceSpecialisationId",
+                table: "MaintainerSpecialisationAssignments",
+                column: "MaintenanceSpecialisationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ToolOrders_FaultId",
+                table: "ToolOrders",
+                column: "FaultId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_DormRoomId",
@@ -258,7 +269,7 @@ namespace HibaVonal_03.Migrations
                 name: "Feedbacks");
 
             migrationBuilder.DropTable(
-                name: "MaintainerProfessions");
+                name: "MaintainerSpecialisationAssignments");
 
             migrationBuilder.DropTable(
                 name: "ToolOrders");

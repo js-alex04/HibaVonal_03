@@ -177,6 +177,9 @@ namespace HibaVonal_03.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("FaultId")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsDelivered")
                         .HasColumnType("bit");
 
@@ -188,6 +191,8 @@ namespace HibaVonal_03.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("FaultId");
 
                     b.ToTable("ToolOrders");
                 });
@@ -229,14 +234,14 @@ namespace HibaVonal_03.Migrations
                     b.Property<int>("MaintainersId")
                         .HasColumnType("int");
 
-                    b.Property<int>("MaintenanceProfessionsId")
+                    b.Property<int>("MaintenanceSpecialisationId")
                         .HasColumnType("int");
 
-                    b.HasKey("MaintainersId", "MaintenanceProfessionsId");
+                    b.HasKey("MaintainersId", "MaintenanceSpecialisationId");
 
-                    b.HasIndex("MaintenanceProfessionsId");
+                    b.HasIndex("MaintenanceSpecialisationId");
 
-                    b.ToTable("MaintainerProfessions", (string)null);
+                    b.ToTable("MaintainerSpecialisationAssignments", (string)null);
                 });
 
             modelBuilder.Entity("HibaVonal_03.Entities.Collegiate", b =>
@@ -329,6 +334,17 @@ namespace HibaVonal_03.Migrations
                     b.Navigation("Fault");
                 });
 
+            modelBuilder.Entity("HibaVonal_03.Entities.ToolOrder", b =>
+                {
+                    b.HasOne("HibaVonal_03.Entities.Fault", "Fault")
+                        .WithMany("ToolOrders")
+                        .HasForeignKey("FaultId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Fault");
+                });
+
             modelBuilder.Entity("MaintainerMaintainerSpecialisation", b =>
                 {
                     b.HasOne("HibaVonal_03.Entities.Maintainer", null)
@@ -339,7 +355,7 @@ namespace HibaVonal_03.Migrations
 
                     b.HasOne("HibaVonal_03.Entities.MaintainerSpecialisation", null)
                         .WithMany()
-                        .HasForeignKey("MaintenanceProfessionsId")
+                        .HasForeignKey("MaintenanceSpecialisationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -363,6 +379,8 @@ namespace HibaVonal_03.Migrations
             modelBuilder.Entity("HibaVonal_03.Entities.Fault", b =>
                 {
                     b.Navigation("Feedbacks");
+
+                    b.Navigation("ToolOrders");
                 });
 
             modelBuilder.Entity("HibaVonal_03.Entities.MaintainerSpecialisation", b =>

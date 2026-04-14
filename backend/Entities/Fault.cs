@@ -28,5 +28,6 @@ namespace HibaVonal_03.Entities
         public int? AssignedMaintenanceId { get; set; } // foreign key to Maintainer, can be null because when a fault is first reported, it may not be assigned to a maintainer yet
         public Maintainer? AssignedMaintenance { get; set; } // the maintainer assigned to fix the problem, can be null because when a fault is first reported, it may not be assigned to a maintainer yet
         public ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback>(); // multiple feedbacks can be associated with a single fault, because multiple tries can be made to fix the problem, and each try can have its own feedback
+        public ICollection<ToolOrder> ToolOrders { get; set; } = new List<ToolOrder>(); // multiple tool orders can be associated with a single fault, because multiple tools may be needed to fix the problem, and each tool order can be for a different tool or a different quantity of the same tool
     }
 }

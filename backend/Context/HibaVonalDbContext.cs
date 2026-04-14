@@ -5,89 +5,95 @@ namespace HibaVonal_03.Context
 {
     public class HibaVonalDbContext : DbContext
     {
-        public DbSet<Appliance> Appliances { get; set; }
-        public DbSet<Collegiate> Collegiates { get; set; }
-        public DbSet<Fault> Faults { get; set; }
-        public DbSet<Feedback> Feedbacks { get; set; }
-        public DbSet<Maintainer> Maintainers { get; set; }
-        public DbSet<MaintainerSpecialisation> MaintainerSpecialisations { get; set; }
-        public DbSet<Premise> Premises { get; set; }
-        public DbSet<ToolOrder> ToolOrders { get; set; }
-        public DbSet<User> Users { get; set; }
-
+        public DbSet<Appliance> Appliances { get; set; } // Berendezések táblája
+        public DbSet<Collegiate> Collegiates { get; set; } // Kollégisták táblája
+        public DbSet<Fault> Faults { get; set; } // Hibák táblája
+        public DbSet<Feedback> Feedbacks { get; set; } // Visszajelzések táblája
+        public DbSet<Maintainer> Maintainers { get; set; } // Karbantartók táblája
+        public DbSet<MaintainerSpecialisation> MaintainerSpecialisations { get; set; } // Karbantartói szakterületek táblája
+        public DbSet<Premise> Premises { get; set; } // Helyiségek táblája 
+        public DbSet<ToolOrder> ToolOrders { get; set; } // Eszközrendelések táblája
+        public DbSet<User> Users { get; set; } // Felhasználók táblája (a User osztály lesz a bázisosztály a TPT öröklődéshez, így minden felhasználó típus itt lesz tárolva, a Role oszlop segítségével megkülönböztetve)
         public HibaVonalDbContext(DbContextOptions<HibaVonalDbContext> options) : base(options) { }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Configure the User entity to use Table-Per-Hierarchy (TPH) inheritance
-            modelBuilder.Entity<User>()
-                .HasDiscriminator(u => u.Role) // Use the Role property to determine the type of user
-                .HasValue<Collegiate>(Role.Collegiate) // Collegiate users will have Role = Collegiate
-                .HasValue<Maintainer>(Role.Maintainer) // Maintainer users will have Role = Maintainer
-                .HasValue<User>(Role.MaintenanceManager) // Maintenance Manager users will be standard Users
-                .HasValue<User>(Role.Administrator); // Administrator users will be standard Users
-
-            modelBuilder.Entity<Collegiate>()
-                .HasOne(c => c.DormRoom) // a collegiate has one dorm room
-                .WithMany(r => r.Residents) // a dorm room can have multiple residents (collegiates)
-                .HasForeignKey(c => c.DormRoomId); // the key between the two tables
-
-            // THE PREMISE TPH CONFIGURATION WAS DELETED HERE BECAUSE PREMISE NO LONGER HAS DERIVED CLASSES
-
-            //Collegiate and Fault one-to-many relationship
-            modelBuilder.Entity<Fault>()
-                .HasOne<Collegiate>(f => f.Collegiate) // the person who reported the problem
-                .WithMany(c => c.ReportedFaults) // a person can have multiple reported problems
-                .HasForeignKey(f => f.CollegiateId) // the key between the two tables
-                .OnDelete(DeleteBehavior.Restrict); // if a collegiate is deleted, their reported faults will not be deleted (to preserve historical data)
-
-            //Maintainer and Fault one-to-many relationship
-            modelBuilder.Entity<Fault>()
-                .HasOne<Maintainer>(f => f.AssignedMaintenance)
-                .WithMany(am => am.AssignedFaults) // a maintainer can have multiple assigned faults, but a fault can only be assigned to one maintainer
-                .HasForeignKey(f => f.AssignedMaintenanceId); // the key between the two tables
-
-            // Premises and Fault one-to-many relationship
-            modelBuilder.Entity<Fault>()
-                .HasOne<Premise>(f => f.Premise) // where the problem occurred (e.g., dorm room, common area, etc.)
-                .WithMany(p => p.OccurredFaults) // a premise can have multiple occurred faults, but a fault can only occur in one premise
-                .HasForeignKey(f => f.PremiseId) // the key between the two tables
-                .OnDelete(DeleteBehavior.ClientSetNull); // if a premise is deleted, the associated faults will not be deleted, but their PremiseId will be set to null (to preserve historical data)
-
-            // Appliance and Fault one-to-many relationship (optional)
-            modelBuilder.Entity<Fault>()
-                .HasOne<Appliance>(f => f.Appliance) // a fault can have an associated appliance
-                .WithMany(a => a.Faults) // an appliance can have multiple faults
-                .HasForeignKey(f => f.ApplianceId); // the key between the two tables
-
-            // MaintainerSpecialisation and Fault one-to-many relationship
-            modelBuilder.Entity<Fault>()
-                .HasOne<MaintainerSpecialisation>(f => f.Specialization) // a fault requires a specialization who can fix it
-                .WithMany(ms => ms.AssignedFaults) // a specialization can be associated with multiple faults
-                .HasForeignKey(f => f.SpecializationId); // the key between the two tables
-
-            modelBuilder.Entity<Feedback>()
-                .HasOne<Collegiate>(c => c.Collegiate) // feedback is provided by a specific collegiate
-                .WithMany(c => c.Feedbacks) // a collegiate can provide multiple feedback entries
-                .HasForeignKey(f => f.CollegiateId) // the key between the two tables
-                .OnDelete(DeleteBehavior.Restrict); // if a collegiate is deleted, their feedback will not be deleted (to preserve historical data)
-
-            // Fault and Feedback one-to-many relationship
-            modelBuilder.Entity<Feedback>()
-                .HasOne<Fault>(fe => fe.Fault) // feedback is associated with a specific fault
-                .WithMany(fa => fa.Feedbacks) // a fault can have multiple feedback entries
-                .HasForeignKey(fe => fe.FaultId); // the key between the two tables
-
-            // Premise and Appliance one-to-many relationship
+            // A Berendezés és a Helyiség közötti kapcsolat (egy-a-sokhoz)
             modelBuilder.Entity<Appliance>()
-                .HasOne<Premise>(a => a.Premise) // an appliance belongs to a premise
-                .WithMany(p => p.Appliances) // a premise can have multiple appliances
-                .HasForeignKey(a => a.PremiseId); // the key between the two tables
+                .HasOne<Premise>(a => a.Premise) // egy berendezés egy helyiséghez tartozik
+                .WithMany(p => p.Appliances) // egy helyiségben több berendezés is lehet
+                .HasForeignKey(a => a.PremiseId); // a kulcs a két tábla között
 
-            // Maintainer and MaintainerSpecialisation many-to-many relationship
+            // A Kollégista és a Saját Szobája közötti kapcsolat (egy-a-sokhoz)
+            modelBuilder.Entity<Collegiate>()
+                .HasOne(c => c.DormRoom) // egy kollégista egy szobához tartozik
+                .WithMany(r => r.Residents) // egy szobában több kollégista is lakhat
+                .HasForeignKey(c => c.DormRoomId); // a kulcs a két tábla között
+
+            // A Hiba és a Berendezés közötti kapcsolat (egy-a-sokhoz)
+            modelBuilder.Entity<Fault>()
+                .HasOne<Appliance>(f => f.Appliance) // egy hiba egy berendezéshez tartozik
+                .WithMany(a => a.Faults) // egy berendezéshez több hiba is tartozhat
+                .HasForeignKey(f => f.ApplianceId); // a kulcs a két tábla között
+
+            // A Hiba és a Kollégista közötti kapcsolat (egy-a-sokhoz)
+            modelBuilder.Entity<Fault>()
+                .HasOne<Collegiate>(f => f.Collegiate) // egy hiba egy kollégistához tartozik
+                .WithMany(c => c.ReportedFaults) // egy kollégistához több hiba is tartozhat
+                .HasForeignKey(f => f.CollegiateId) // a kulcs a két tábla között
+                .OnDelete(DeleteBehavior.Restrict); // ha egy kollégista törlésre kerül, a hozzá tartozó hibák nem törlődnek (a korábbi hibák megőrzése érdekében)
+
+            // A Hiba és a Karbantartó közötti kapcsolat (egy-a-sokhoz)
+            modelBuilder.Entity<Fault>()
+                .HasOne<Maintainer>(f => f.AssignedMaintenance) // egy hiba egy karbantartóhoz van rendelve
+                .WithMany(am => am.AssignedFaults) // egy karbantartóhoz több hiba is lehet rendelve, de egy hiba csak egy karbantartóhoz lehet rendelve
+                .HasForeignKey(f => f.AssignedMaintenanceId); // a kulcs a két tábla között
+
+            // A Hiba és a Szakterület közötti kapcsolat (egy-a-sokhoz)
+            modelBuilder.Entity<Fault>()
+                .HasOne<MaintainerSpecialisation>(f => f.Specialization) // egy hiba egy szakterülethez tartozik
+                .WithMany(ms => ms.AssignedFaults) // egy szakterülethez több hiba is tartozhat
+                .HasForeignKey(f => f.SpecializationId); // a kulcs a két tábla között
+
+            // A Hiba és a Helyiség közötti kapcsolat (egy-a-sokhoz)
+            modelBuilder.Entity<Fault>()
+                .HasOne<Premise>(f => f.Premise) // egy hiba egy helyiséghez tartozik (pl. kollégiumi szoba, közös helyiség stb.)
+                .WithMany(p => p.OccurredFaults) // egy helyiséghez több hiba is tartozhat, de egy hiba csak egy helyiségben fordulhat elő
+                .HasForeignKey(f => f.PremiseId) // a kulcs a két tábla között
+                .OnDelete(DeleteBehavior.ClientSetNull); // ha egy helyiség törlésre kerül, a hozzá tartozó hibák nem törlődnek, de a PremiseId értéke null lesz (a korábbi hibák megőrzése érdekében)
+
+            // A Visszajelzés és a Kollégista közötti kapcsolat (egy-a-sokhoz)
+            modelBuilder.Entity<Feedback>()
+                .HasOne<Collegiate>(c => c.Collegiate) // egy visszajelzés egy konkrét kollégistához tartozik
+                .WithMany(c => c.Feedbacks) // egy kollégista több visszajelzést is adhat
+                .HasForeignKey(f => f.CollegiateId) // a kulcs a két tábla között
+                .OnDelete(DeleteBehavior.Restrict); // ha egy kollégista törlésre kerül, a hozzá tartozó visszajelzések nem törlődnek (a korábbi visszajelzések megőrzése érdekében)
+
+            // A Visszajelzés és a Hiba közötti kapcsolat (egy-a-sokhoz)
+            modelBuilder.Entity<Feedback>()
+                .HasOne<Fault>(fe => fe.Fault) // egy visszajelzés egy konkrét hibához tartozik
+                .WithMany(fa => fa.Feedbacks) // egy hibához több visszajelzés is tartozhat
+                .HasForeignKey(fe => fe.FaultId); // a kulcs a két tábla között 
+
+            // A Karbantartó és a Szakterület közötti kapcsolat (sok-a-sokhoz)
             modelBuilder.Entity<Maintainer>()
-                .HasMany(m => m.MaintenanceProfessions) // a maintainer can have multiple specializations
-                .WithMany(ms => ms.Maintainers) // a specialization can be associated with multiple maintainers
-                .UsingEntity(j => j.ToTable("MaintainerProfessions")); // specify the name of the join table for the many-to-many relationship
+                .HasMany(m => m.MaintenanceSpecialisation) // egy karbantartó több szakterülettel is rendelkezhet
+                .WithMany(ms => ms.Maintainers) // egy szakterület több karbantartóhoz is tartozhat
+                .UsingEntity(j => j.ToTable("MaintainerSpecialisationAssignments")); // a sok-a-sokhoz kapcsolat köztes táblájának neve   
+
+            // Az Eszközrendelés és a Hiba közötti kapcsolat (egy-a-sokhoz)
+            modelBuilder.Entity<ToolOrder>()
+                .HasOne<Fault>(to => to.Fault) // egy eszközrendelés egy konkrét hibához tartozik
+                .WithMany(f => f.ToolOrders) // egy hibához több eszközrendelés is tartozhat, de egy eszközrendelés csak egy hibához tartozhat
+                .HasForeignKey(to => to.FaultId) // a kulcs a két tábla között
+                .OnDelete(DeleteBehavior.Cascade); // ha egy hiba törlésre kerül, a hozzá tartozó eszközrendelések is törlődnek (az adatintegritás megőrzése érdekében, mivel egy eszközrendelés nem létezhet kapcsolódó hiba nélkül)
+
+            // A Felhasználó és a Szerepkörök közötti kapcsolat TPT öröklődés használatával
+            modelBuilder.Entity<User>()
+                .HasDiscriminator(u => u.Role) // a Role oszlop fogja megkülönböztetni a különböző típusú felhasználókat
+                .HasValue<Collegiate>(Role.Collegiate) // a Kollégista felhasználók Role = Collegiate értéket kapnak
+                .HasValue<Maintainer>(Role.Maintainer) // a Karbantartó felhasználók Role = Maintainer értéket kapnak
+                .HasValue<User>(Role.MaintenanceManager) // a Karbantartásvezető felhasználók Role = MaintenanceManager értéket kapnak, bár a Karbantartásvezetők nem rendelkeznek külön osztállyal, így a User osztályban maradnak (a Role érték alapján megkülönböztetve)
+                .HasValue<User>(Role.Administrator); // az Adminisztrátor felhasználók Role = Administrator értéket kapnak, bár az Adminisztrátorok nem rendelkeznek külön osztállyal, így a User osztályban maradnak (a Role érték alapján megkülönböztetve)
         }
     }
 }
