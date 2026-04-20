@@ -1,8 +1,14 @@
+using AutoMapper;
 using HibaVonal_03.Context;
+using HibaVonal_03.Interfaces.Auth;
 using HibaVonal_03.Interfaces.Fault;
+using HibaVonal_03.Interfaces.Feedback;
 using HibaVonal_03.Interfaces.ToolOrder;
+using HibaVonal_03.Profiles;
 using HibaVonal_03.Repositories;
+using HibaVonal_03.Services.Auth;
 using HibaVonal_03.Services.Fault;
+using HibaVonal_03.Services.Feedback;
 using HibaVonal_03.Services.ToolOrder;
 using Microsoft.EntityFrameworkCore;
 
@@ -35,8 +41,14 @@ namespace HibaVonal_03
             builder.Services.AddDbContext<HibaVonalDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))); // Use SQL Server as the database provider, with the connection string from appsettings.
 
+            // we register the AuthService (IAuthService and AuthService) with the dependency injection container
+            builder.Services.AddScoped<IAuthService, AuthService>();
+
             // we register the FaultService (IFaultService and FaultService) with the dependency injection container
             builder.Services.AddScoped<IFaultService, FaultService>();
+
+            // we register the FeedbackService (IFeedbackService and FeedbackService) with the dependency injection container
+            builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 
             // we register the ToolOrderService (IToolOrderService and ToolOrderService) with the dependency injection container
             builder.Services.AddScoped<IToolOrderService, ToolOrderService>();
@@ -46,6 +58,12 @@ namespace HibaVonal_03
 
             // we register the UnitOfWork (IUnitOfWork and UnitOfWork) with the dependency injection container
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+            //Mapper registration
+            builder.Services.AddAutoMapper(config =>
+            {
+                config.AddMaps(typeof(Program).Assembly);
+            });
 
             var app = builder.Build();
 

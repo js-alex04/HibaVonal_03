@@ -7,6 +7,9 @@ namespace HibaVonal_03.Repositories
     public interface IUnitOfWork : IDisposable
     {
         IRepository<Fault> FaultRepository { get; }
+        IRepository<Feedback> FeedbackRepository { get; }
+        IRepository<Maintainer> MaintainerRepository { get; }
+        IRepository<MaintainerSpecialisation> MaintainerSpecialisationRepository { get; }
         IRepository<ToolOrder> ToolOrderRepository { get; }
         IRepository<User> UserRepository { get; }
 
