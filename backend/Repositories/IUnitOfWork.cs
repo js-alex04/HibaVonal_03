@@ -9,6 +9,9 @@ namespace HibaVonal_03.Repositories
         IRepository<Fault> FaultRepository { get; }
         IRepository<ToolOrder> ToolOrderRepository { get; }
         IRepository<User> UserRepository { get; }
+        IRepository<Feedback> FeedbackRepository {  get; }
+        IRepository<MaintainerSpecialisation> MaintainerSpecialisationRepository { get; }
+        IRepository<Maintainer> MaintainerRepository { get; }
 
         Task<int> SaveChangesAsync();
     }

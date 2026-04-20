@@ -1,6 +1,14 @@
 using HibaVonal_03.Context;
+using HibaVonal_03.Interfaces.Fault;
+using HibaVonal_03.Interfaces.Feedback;
+using HibaVonal_03.Profiles;
 using HibaVonal_03.Repositories;
+using HibaVonal_03.Services.Fault;
+using HibaVonal_03.Services.Feedback;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Operations;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 
 namespace HibaVonal_03
 {
@@ -36,6 +44,13 @@ namespace HibaVonal_03
 
             // we register the UnitOfWork (IUnitOfWork and UnitOfWork) with the dependency injection container
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+            //we register the services (I...Service and ...Service) with the dependency injection container
+            builder.Services.AddScoped<IFaultService, FaultService>();
+            builder.Services.AddScoped<IFeedbackService, FeedbackService>();
+
+            //Mapper registration
+            builder.Services.AddAutoMapper(typeof(FaultProfile));
 
             var app = builder.Build();
 
