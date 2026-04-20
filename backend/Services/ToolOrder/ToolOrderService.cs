@@ -1,4 +1,5 @@
-﻿using HibaVonal_03.DTOs.ToolOrder;
+﻿using AutoMapper;
+using HibaVonal_03.DTOs.ToolOrder;
 using HibaVonal_03.Interfaces.ToolOrder;
 using HibaVonal_03.Repositories;
 
@@ -7,10 +8,12 @@ namespace HibaVonal_03.Services.ToolOrder
     public class ToolOrderService : IToolOrderService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
 
-        public ToolOrderService(IUnitOfWork unitOfWork)
+        public ToolOrderService(IUnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
 
         //CRUD operations for ToolOrder
@@ -22,27 +25,14 @@ namespace HibaVonal_03.Services.ToolOrder
                 throw new ArgumentException($"Fault with ID {toolOrder.FaultId} does not exist.");
             }
 
-            var newOrder = new Entities.ToolOrder
-            {
-                FaultId = toolOrder.FaultId,
-                ToolName = toolOrder.ToolName,
-                Quantity = toolOrder.Quantity,
-                Date = DateTime.UtcNow,
-                IsDelivered = false
-            };
+            var newOrder = _mapper.Map<Entities.ToolOrder>(toolOrder);
+            newOrder.Date = DateTime.UtcNow;
+            newOrder.IsDelivered = false;
 
             await _unitOfWork.ToolOrderRepository.AddAsync(newOrder);
             await _unitOfWork.SaveChangesAsync();
 
-            return new ToolOrderResponseDto
-            {
-                Id = newOrder.Id,
-                FaultId = toolOrder.FaultId,
-                ToolName = newOrder.ToolName,
-                Quantity = newOrder.Quantity,
-                Date = newOrder.Date,
-                IsDelivered = newOrder.IsDelivered
-            };
+            return _mapper.Map<ToolOrderResponseDto>(newOrder);
         }
 
         //Read
@@ -50,15 +40,7 @@ namespace HibaVonal_03.Services.ToolOrder
         {
             var allOrders = await _unitOfWork.ToolOrderRepository.GetAllAsync();
 
-            return allOrders.Select(order => new ToolOrderResponseDto
-            {
-                Id = order.Id,
-                FaultId = order.FaultId,
-                ToolName = order.ToolName,
-                Quantity = order.Quantity,
-                Date = order.Date,
-                IsDelivered = order.IsDelivered
-            }).ToList();
+            return _mapper.Map<List<ToolOrderResponseDto>>(allOrders);
         }
 
         public async Task<ToolOrderResponseDto> GetToolOrderByIdAsync(int id)
@@ -70,30 +52,21 @@ namespace HibaVonal_03.Services.ToolOrder
                 return null;
             }
 
-            return new ToolOrderResponseDto
-            {
-                Id = orderById.Id,
-                FaultId = orderById.FaultId,
-                ToolName = orderById.ToolName,
-                Quantity = orderById.Quantity,
-                Date = orderById.Date,
-                IsDelivered = orderById.IsDelivered
-            };
+            return _mapper.Map<ToolOrderResponseDto>(orderById);
         }
 
         //Update
         public async Task<bool> UpdateToolOrderAsync(int id, ToolOrderUpdateDto toolOrder)
         {
             var existingOrder = await _unitOfWork.ToolOrderRepository.GetByIdAsync(id);
-            
+
             if (existingOrder == null)
             {
                 return false;
             }
             else
             {
-                existingOrder.ToolName = toolOrder.ToolName;
-                existingOrder.Quantity = toolOrder.Quantity;
+                _mapper.Map(toolOrder, existingOrder);
                 _unitOfWork.ToolOrderRepository.Update(existingOrder);
                 await _unitOfWork.SaveChangesAsync();
                 return true;
@@ -107,7 +80,7 @@ namespace HibaVonal_03.Services.ToolOrder
 
             if (orderToDelete == null)
             {
-                return false; 
+                return false;
             }
             else
             {
@@ -139,33 +112,17 @@ namespace HibaVonal_03.Services.ToolOrder
         public async Task<List<ToolOrderResponseDto>> GetToolOrdersByFaultIdAsync(int faultId)
         {
             var allOrders = await _unitOfWork.ToolOrderRepository.GetAllAsync();
-            var ordersByFaultId = allOrders.Where(order => order.FaultId == faultId);
+            var ordersByFaultId = allOrders.Where(order => order.FaultId == faultId).ToList();
 
-            return ordersByFaultId.Select(order => new ToolOrderResponseDto
-            {
-                Id = order.Id,
-                FaultId = order.FaultId,
-                ToolName = order.ToolName,
-                Quantity = order.Quantity,
-                Date = order.Date,
-                IsDelivered = order.IsDelivered
-            }).ToList();
+            return _mapper.Map<List<ToolOrderResponseDto>>(ordersByFaultId);
         }
 
         public async Task<List<ToolOrderResponseDto>> GetPendingOrdersAsync()
         {
             var allOrders = await _unitOfWork.ToolOrderRepository.GetAllAsync();
-            var pendingOrders = allOrders.Where(order => !order.IsDelivered);
+            var pendingOrders = allOrders.Where(order => !order.IsDelivered).ToList();
 
-            return pendingOrders.Select(order => new ToolOrderResponseDto
-            {
-                Id = order.Id,
-                FaultId = order.FaultId,
-                ToolName = order.ToolName,
-                Quantity = order.Quantity,
-                Date = order.Date,
-                IsDelivered = order.IsDelivered
-            }).ToList();
+            return _mapper.Map<List<ToolOrderResponseDto>>(pendingOrders);
         }
     }
 }
