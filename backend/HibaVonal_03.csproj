@@ -18,6 +18,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="DTOs\Appliance\" />
+    <Folder Include="DTOs\MaintainerSpecialisation\" />
+    <Folder Include="DTOs\Premise\" />
+    <Folder Include="Interfaces\Appliance\" />
+    <Folder Include="Interfaces\MaintainerSpecialisation\" />
+    <Folder Include="Interfaces\Premise\" />
     <Folder Include="Migrations\" />
   </ItemGroup>
 

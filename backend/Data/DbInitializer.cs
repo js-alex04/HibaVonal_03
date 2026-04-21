@@ -27,9 +27,9 @@ namespace HibaVonal_03.Data
             // --- 2. Helyszínek (Egységes Premise osztály használata) ---
             // ID-nak nullát adunk, mert a SQL Server IDENTITY oszlopa automatikusan ad majd neki számot.
             // A 3. paraméter az enum, a 4. paraméter pedig a szobaszám/név stringként.
-            var room101 = new Premise(0, 1, PremiseType.PrivateRoom, "101");
-            var room102 = new Premise(0, 1, PremiseType.PrivateRoom, "102");
-            var kitchen = new Premise(0, 1, PremiseType.CommonPlace, "Földszinti Közösségi Konyha");
+            var room101 = new Premise(1, PremiseType.PrivateRoom, "101");
+            var room102 = new Premise(1, PremiseType.PrivateRoom, "102");
+            var kitchen = new Premise(1, PremiseType.CommonPlace, "Földszinti Közösségi Konyha");
 
             context.Premises.AddRange(room101, room102, kitchen);
 
