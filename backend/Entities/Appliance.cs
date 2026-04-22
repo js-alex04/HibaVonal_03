@@ -8,7 +8,7 @@
         public Premise Premise { get; set; }
         public ICollection<Fault> Faults { get; set; } = new List<Fault>();
 
-        protected Appliance() { } // Parameterless constructor for EF Core
+        protected Appliance() { } // Paraméter nélküli konstruktor az Entity Framework számára
         public Appliance(int id, string name)
         {
             Id = id;

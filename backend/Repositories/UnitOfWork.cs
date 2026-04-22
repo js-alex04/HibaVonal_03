@@ -7,10 +7,12 @@ namespace HibaVonal_03.Repositories
     {
         private readonly HibaVonalDbContext _context;
 
+        private IRepository<Appliance>? _applianceRepository;
         private IRepository<Fault>? _faultRepository;
         private IRepository<Feedback>? _feedbackRepository;
         private IRepository<Maintainer> _maintainerRepository;
         private IRepository<MaintainerSpecialisation> _maintainerSpecialisationRepository;
+        private IRepository<Premise>? _premiseRepository;
         private IRepository<ToolOrder>? _toolOrderRepository;
         private IRepository<User>? _userRepository;
 
@@ -19,10 +21,12 @@ namespace HibaVonal_03.Repositories
             _context = context;
         }
 
+        public IRepository<Appliance> ApplianceRepository => _applianceRepository ??= new Repository<Appliance>(_context);
         public IRepository<Fault> FaultRepository => _faultRepository ??= new Repository<Fault>(_context);
         public IRepository<Feedback> FeedbackRepository => _feedbackRepository ??= new Repository<Feedback>(_context);
         public IRepository<Maintainer> MaintainerRepository => _maintainerRepository ??= new Repository<Maintainer>(_context);
         public IRepository<MaintainerSpecialisation> MaintainerSpecialisationRepository => _maintainerSpecialisationRepository ??= new Repository<MaintainerSpecialisation>(_context);
+        public IRepository<Premise> PremiseRepository => _premiseRepository ??= new Repository<Premise>(_context);
         public IRepository<ToolOrder> ToolOrderRepository => _toolOrderRepository ??= new Repository<ToolOrder>(_context);
         public IRepository<User> UserRepository => _userRepository ??= new Repository<User>(_context);
 

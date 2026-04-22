@@ -1,16 +1,27 @@
 using AutoMapper;
 using HibaVonal_03.Context;
+using HibaVonal_03.Interfaces.Appliance;
 using HibaVonal_03.Interfaces.Auth;
 using HibaVonal_03.Interfaces.Fault;
 using HibaVonal_03.Interfaces.Feedback;
+using HibaVonal_03.Interfaces.Maintainer;
+using HibaVonal_03.Interfaces.MaintainerSpecialisation;
+using HibaVonal_03.Interfaces.Premise;
 using HibaVonal_03.Interfaces.ToolOrder;
+using HibaVonal_03.Interfaces.User;
 using HibaVonal_03.Profiles;
 using HibaVonal_03.Repositories;
+using HibaVonal_03.Services;
+using HibaVonal_03.Services.Appliance;
 using HibaVonal_03.Services.Auth;
 using HibaVonal_03.Services.Fault;
 using HibaVonal_03.Services.Feedback;
+using HibaVonal_03.Services.Maintainer;
+using HibaVonal_03.Services.MaintainerSpecialisation;
+using HibaVonal_03.Services.Premise;
 using HibaVonal_03.Services.ToolOrder;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 namespace HibaVonal_03
 {
@@ -22,7 +33,11 @@ namespace HibaVonal_03
 
             // Add services to the container.
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers().AddJsonOptions(options =>
+            {
+                // enumok olvasható szöveggé alakítása
+                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            }); ;
 
             builder.Services.AddEndpointsApiExplorer(); // Ez segít a Swaggernek feltérképezni a végpontokat
             builder.Services.AddSwaggerGen();           // Ez generálja a Swagger dokumentációt
@@ -41,22 +56,37 @@ namespace HibaVonal_03
             builder.Services.AddDbContext<HibaVonalDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))); // Use SQL Server as the database provider, with the connection string from appsettings.
 
-            // we register the AuthService (IAuthService and AuthService) with the dependency injection container
+            // regisztráljuk az ApplianceService-t (IApplianceService és ApplianceService) a dependency injection konténerbe
+            builder.Services.AddScoped<IApplianceService, ApplianceService>();
+
+            // regisztráljuk az AuthService-t (IAuthService és AuthService) a dependency injection konténerbe
             builder.Services.AddScoped<IAuthService, AuthService>();
 
-            // we register the FaultService (IFaultService and FaultService) with the dependency injection container
+            // regisztráljuk a FaultService-t (IFaultService és FaultService) a dependency injection konténerbe
             builder.Services.AddScoped<IFaultService, FaultService>();
 
-            // we register the FeedbackService (IFeedbackService and FeedbackService) with the dependency injection container
+            // regisztráljuk a FeedbackService-t (IFeedbackService és FeedbackService) a dependency injection konténerbe
             builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 
-            // we register the ToolOrderService (IToolOrderService and ToolOrderService) with the dependency injection container
+            // regisztráljuk a MaintainerService-t (IMaintainerService és MaintainerService) a dependency injection konténerbe
+            builder.Services.AddScoped<IMaintainerService, MaintainerService>();
+
+            // regisztráljuk a MaintainerSpecialisationService-t (IMaintainerSpecialisationService és MaintainerSpecialisationService) a dependency injection konténerbe
+            builder.Services.AddScoped<IMaintainerSpecialisationService, MaintainerSpecialisationService>();
+
+            // regisztráljuk a PremiseService-t (IPremiseService és PremiseService) a dependency injection konténerbe
+            builder.Services.AddScoped<IPremiseService, PremiseService>();
+
+            // regisztráljuk a ToolOrderService-t (IToolOrderService és ToolOrderService) a dependency injection konténerbe
             builder.Services.AddScoped<IToolOrderService, ToolOrderService>();
 
-            // we register the generic repository (IRepository<T> and Repository<T>) with the dependency injection container
+            // regisztráljuk a UserService-t (IUserService és UserService) a dependency injection konténerbe
+            builder.Services.AddScoped<IUserService, UserService>();
+
+            // regisztráljuk a generikus repository-t (IRepository<T> és Repository<T>) a dependency injection konténerbe
             builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 
-            // we register the UnitOfWork (IUnitOfWork and UnitOfWork) with the dependency injection container
+            // regisztráljuk a UnitOfWork-t (IUnitOfWork és UnitOfWork) a dependency injection konténerbe
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             //Mapper registration

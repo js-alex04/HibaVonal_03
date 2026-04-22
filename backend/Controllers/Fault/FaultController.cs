@@ -2,6 +2,7 @@
 using HibaVonal_03.DTOs.Feedback;
 using HibaVonal_03.Entities;
 using HibaVonal_03.Interfaces.Fault;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -29,7 +30,7 @@ namespace HibaVonal_03.Controllers.Fault
         }
 
         [HttpGet]
-        public async Task<ActionResult> GetAllFaults([FromBody] FaultResponseDto fault)
+        public async Task<ActionResult> GetAllFaults()
         {
             var result = await _faultService.GetAllFaultsAsync();
 
@@ -50,7 +51,6 @@ namespace HibaVonal_03.Controllers.Fault
                 return Ok(result);
             }
         }
-
 
         [HttpPut("{id}")]
         public async Task<ActionResult> UpdateFault(int id, [FromBody] FaultUpdateDto fault)
@@ -85,9 +85,9 @@ namespace HibaVonal_03.Controllers.Fault
 
         //Specific operations for Fault
         [HttpPost("{id}/add-feedback")]
-        public async Task<ActionResult> AddFeedback(int id, [FromBody] FeedbackCreateDto dto)
+        public async Task<ActionResult> AddFeedback(int faultId, [FromBody] FeedbackCreateDto dto)
         {
-            var result = await _faultService.NewFeedbackAsync(id, dto);
+            var result = await _faultService.NewFeedbackAsync(faultId, dto);
 
             if (!result)
             {

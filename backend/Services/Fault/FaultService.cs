@@ -12,9 +12,11 @@ namespace HibaVonal_03.Services.Fault
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public FaultService(IUnitOfWork unitOfWork)
+        public FaultService(IUnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
+            _mapper = mapper;
+
         }
 
         //CRUD operations for Fault

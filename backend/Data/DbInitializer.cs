@@ -8,44 +8,70 @@ namespace HibaVonal_03.Data
     {
         public static void Initialize(HibaVonalDbContext context)
         {
-            // Biztonsági lépés: Garantálja, hogy az adatbázis létezik
             context.Database.EnsureCreated();
 
-            // Nézzük meg, van-e már bármilyen felhasználó. Ha igen, az adatbázis már fel van töltve (Seedelve).
-            if (context.Users.Any())
+            if (context.Faults.Count() >= 100) return; // Ha már van elég adat, ne fusson le újra
+
+            var random = new Random();
+
+            // 1. Szakterületek
+            var specialisations = new List<MaintainerSpecialisation>
+    {
+        new() { Name = "Vízvezeték-szerelő" },
+        new() { Name = "Villanyszerelő" },
+        new() { Name = "Asztalos" },
+        new() { Name = "Lakatos" },
+        new() { Name = "Informatikus" }
+    };
+            context.MaintainerSpecialisations.AddRange(specialisations);
+            context.SaveChanges();
+
+            // 2. Helyszínek (20 szoba)
+            var premises = new List<Premise>();
+            for (int i = 1; i <= 20; i++)
             {
-                return;
+                premises.Add(new Premise(0, (i / 10) + 1, PremiseType.PrivateRoom, $"{100 + i}"));
+            }
+            context.Premises.AddRange(premises);
+            context.SaveChanges();
+
+            // 3. Felhasználók
+            var maintainers = new List<Maintainer>();
+            for (int i = 1; i <= 5; i++)
+            {
+                maintainers.Add(new Maintainer(0, $"Karbantartó {i}", $"szaki{i}@hibavonal.hu", "pass", true, new List<MaintainerSpecialisation> { specialisations[random.Next(specialisations.Count)] }));
             }
 
-            // --- 1. Szakterületek létrehozása ---
-            var vizvezetekSzerelo = new MaintainerSpecialisation { Name = "Vízvezeték-szerelő" };
-            var villanyszerelo = new MaintainerSpecialisation { Name = "Villanyszerelő" };
-            var asztalos = new MaintainerSpecialisation { Name = "Asztalos" };
+            var collegiates = new List<Collegiate>();
+            for (int i = 1; i <= 30; i++)
+            {
+                collegiates.Add(new Collegiate(0, $"Hallgató {i}", $"hallgato{i}@hibavonal.hu", "pass", premises[random.Next(premises.Count)]));
+            }
 
-            context.MaintainerSpecialisations.AddRange(vizvezetekSzerelo, villanyszerelo, asztalos);
+            context.Maintainers.AddRange(maintainers);
+            context.Collegiates.AddRange(collegiates);
+            context.SaveChanges();
 
-            // --- 2. Helyszínek (Egységes Premise osztály használata) ---
-            // ID-nak nullát adunk, mert a SQL Server IDENTITY oszlopa automatikusan ad majd neki számot.
-            // A 3. paraméter az enum, a 4. paraméter pedig a szobaszám/név stringként.
-            var room101 = new Premise(0, 1, PremiseType.PrivateRoom, "101");
-            var room102 = new Premise(0, 1, PremiseType.PrivateRoom, "102");
-            var kitchen = new Premise(0, 1, PremiseType.CommonPlace, "Földszinti Közösségi Konyha");
+            // 4. Hibák generálása (100 darab)
+            var faults = new List<Fault>();
+            var descriptions = new[] { "Csöpög a csap", "Nem ég a lámpa", "Törött ablak", "Dugulás", "Nem csukódik az ajtó", "Hangos a hűtő" };
 
-            context.Premises.AddRange(room101, room102, kitchen);
-
-            // --- 3. Felhasználók (Admin, Karbantartó, Kollégista) ---
-
-            // Az Admin most már egy sima User, Role.Administrator jogosultsággal!
-            var admin = new User(0, "Fő Admin", "admin@hibavonal.hu", "admin123", Role.Administrator);
-
-            var maintainer = new Maintainer(0, "Kovács Szaki", "szaki@hibavonal.hu", "szaki123", true, new List<MaintainerSpecialisation> { vizvezetekSzerelo, villanyszerelo });
-
-            // A Collegiate most már a Premise típusú szobát kapja meg
-            var collegiate = new Collegiate(0, "Teszt Hallgató", "hallgato@hibavonal.hu", "hallgato123", room101);
-
-            context.Users.AddRange(admin, maintainer, collegiate);
-
-            // --- 4. Változások mentése az adatbázisba ---
+            for (int i = 1; i <= 100; i++)
+            {
+                var collegiate = collegiates[random.Next(collegiates.Count)];
+                faults.Add(new Fault
+                {
+                    Description = descriptions[random.Next(descriptions.Length)] + $" (#{i})",
+                    Attachment = "nincs_kep.jpg",
+                    Date = DateTime.Now.AddDays(-random.Next(1, 30)),
+                    CollegiateId = collegiate.Id,
+                    PremiseId = collegiate.DormRoomId,
+                    SpecializationId = specialisations[random.Next(specialisations.Count)].Id,
+                    Status = (FaultStatus)random.Next(0, 5),
+                    AssignedMaintenanceId = random.Next(0, 2) == 1 ? maintainers[random.Next(maintainers.Count)].Id : null
+                });
+            }
+            context.Faults.AddRange(faults);
             context.SaveChanges();
         }
     }

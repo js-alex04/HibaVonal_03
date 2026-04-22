@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HibaVonal_03.Migrations
 {
     [DbContext(typeof(HibaVonalDbContext))]
-    [Migration("20260414142555_InitialCreate")]
+    [Migration("20260422162402_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -61,6 +61,10 @@ namespace HibaVonal_03.Migrations
                     b.Property<int?>("AssignedMaintenanceId")
                         .HasColumnType("int");
 
+                    b.Property<string>("Attachment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("CollegiateId")
                         .HasColumnType("int");
 
@@ -71,14 +75,10 @@ namespace HibaVonal_03.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Documentation")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int>("PremiseId")
                         .HasColumnType("int");
 
-                    b.Property<int>("SpecializationId")
+                    b.Property<int?>("SpecializationId")
                         .HasColumnType("int");
 
                     b.Property<int>("Status")
@@ -303,9 +303,7 @@ namespace HibaVonal_03.Migrations
 
                     b.HasOne("HibaVonal_03.Entities.MaintainerSpecialisation", "Specialization")
                         .WithMany("AssignedFaults")
-                        .HasForeignKey("SpecializationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("SpecializationId");
 
                     b.Navigation("Appliance");
 

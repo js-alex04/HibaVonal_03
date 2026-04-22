@@ -18,7 +18,8 @@ namespace HibaVonal_03.Controllers.ToolOrder
         }
 
 
-        //CRUD operations for ToolOrder
+        // CRUD négy alapművelet a ToolOrder entitásra
+        // Create
         [HttpPost]
         public async Task<IActionResult> CreateToolOrder([FromBody] ToolOrderCreateDto body)
         {
