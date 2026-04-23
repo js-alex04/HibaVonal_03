@@ -122,9 +122,9 @@ namespace HibaVonal_03.Controllers.Fault
         }
 
         [HttpPut("{id}/set-maintainer-specialisation")]
-        public async Task<ActionResult> SetFaultSpecialisation(int id, int specialisationId)
+        public async Task<ActionResult> SetFaultSpecialisation(int faultId, int specialisationId)
         {
-            var result = await _faultService.SetFaultSpecialisationAsync(id, specialisationId);
+            var result = await _faultService.SetFaultSpecialisationAsync(faultId, specialisationId);
 
             if (result)
             {
@@ -137,9 +137,9 @@ namespace HibaVonal_03.Controllers.Fault
         }
 
         [HttpPut("{id}/assign-maintainer")]
-        public async Task<ActionResult> AssignFaultMaintainer(int id, int maintainerId)
+        public async Task<ActionResult> AssignFaultMaintainer(int faultId, int maintainerId)
         {
-            var result = await _faultService.AssignMaintainerAsync(id, maintainerId);
+            var result = await _faultService.AssignMaintainerAsync(faultId, maintainerId);
 
             if (result)
             {
