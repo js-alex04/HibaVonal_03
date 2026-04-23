@@ -44,23 +44,28 @@ namespace HibaVonal_03.Services.Fault
             return newFault.Id;
         }
 
-        //Read
+        // Read (Összes lekérdezése)
         public async Task<List<FaultResponseDto>> GetAllFaultsAsync()
         {
+            // A GetAllAsync() helyett a GetAsync()-et használjuk, ami támogatja az Include-olást!
             var faults = await _unitOfWork.FaultRepository.GetAsync(
-                null,
-                "Collegiate,Premise,Appliance,Specialization,AssignedMaintenance"
-                );
+                filter: null, 
+                includeProperties: "Feedbacks,Collegiate,AssignedMaintenance,Appliance,Premise,ToolOrders"
+            );
 
             return _mapper.Map<List<FaultResponseDto>>(faults);
         }
 
-        public async Task<FaultResponseDto> GetFaultByIdAsync(int faultId)
+        // Read by ID (Egyetlen lekérdezése)
+        public async Task<FaultResponseDto?> GetFaultByIdAsync(int id)
         {
-            var fault = (await _unitOfWork.FaultRepository.GetAsync(
-                f => f.Id == faultId,
-                "Collegiate,Premise,Appliance,Specialization,AssignedMaintenance"
-                )).FirstOrDefault();
+            var faults = await _unitOfWork.FaultRepository.GetAsync(
+                filter: f => f.Id == id,
+                // Itt is kérjük be a kapcsolódó adatokat!
+                includeProperties: "Feedbacks,Collegiate,AssignedMaintenance,Appliance,Premise,ToolOrders"
+            );
+
+            var fault = faults.FirstOrDefault();
 
             if (fault == null)
             {
@@ -121,18 +126,17 @@ namespace HibaVonal_03.Services.Fault
                 throw new ArgumentException($"Fault with Id {id} is not yet finished");
             }
 
-            Entities.Feedback @feedback = _mapper.Map<Entities.Feedback>(dto);
-
+            // 2. Kézzel hozzuk létre az új visszajelzést
             var newFeedback = new Entities.Feedback
             {
-                FaultId = feedback.FaultId,
+                FaultId = id,
                 Date = DateTime.UtcNow,
-                Text = feedback.Text,
+                Text = dto.Text,
                 CollegiateId = fault.CollegiateId,
             };
 
+            // 3. Elmentjük. 
             await _unitOfWork.FeedbackRepository.AddAsync(newFeedback);
-            fault.Feedbacks.Add(@feedback);
             await _unitOfWork.SaveChangesAsync();
 
             return true;

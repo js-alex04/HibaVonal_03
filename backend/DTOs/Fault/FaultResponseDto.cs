@@ -1,4 +1,6 @@
-﻿using HibaVonal_03.Entities;
+﻿using HibaVonal_03.DTOs.Feedback;
+using HibaVonal_03.DTOs.ToolOrder;
+using HibaVonal_03.Entities;
 
 namespace HibaVonal_03.DTOs.Fault
 {
@@ -19,7 +21,7 @@ namespace HibaVonal_03.DTOs.Fault
         public int? AssignedMaintenanceId { get; set; }
         public string? AssignedMaintenanceEmail { get; set; }
         public FaultStatus Status { get; set; }
-        public ICollection<Entities.Feedback>? Feedbacks { get; set; }
-        public ICollection<Entities.ToolOrder>? ToolOrders { get; set; }
+        public List<FeedbackResponseDto>? Feedbacks { get; set; }
+        public List<ToolOrderResponseDto>? ToolOrders { get; set; }
     }
 }

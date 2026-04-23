@@ -105,7 +105,10 @@ namespace HibaVonal_03.Services
 
         public async Task<List<UserDto>> GetAllUsersAsync()
         {
-            var users = await _unitOfWork.UserRepository.GetAllAsync();
+            var users = await _unitOfWork.UserRepository.GetAsync(
+                filter: null,
+                includeProperties: "MaintenanceSpecialisation"
+            );
 
             return _mapper.Map<List<UserDto>>(users);
         }

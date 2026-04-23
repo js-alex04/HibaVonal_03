@@ -8,8 +8,8 @@ namespace HibaVonal_03.Profiles
     {
         public FeedbackProfile()
         {
-            CreateMap<Feedback, FeedbackResponseDto>()
-                .ForMember(dest => dest.CollegiateEmail, opt => opt.MapFrom(src => src.Collegiate));
+            CreateMap<Entities.Feedback, FeedbackResponseDto>()
+                .ForMember(dest => dest.CollegiateEmail, opt => opt.MapFrom(src => src.Collegiate.Email));
 
             CreateMap<FeedbackCreateDto, Feedback>();
         }

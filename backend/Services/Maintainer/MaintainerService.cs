@@ -19,8 +19,10 @@ namespace HibaVonal_03.Services.Maintainer
 
         public async Task<List<UserDto>> GetAllMaintainersAsync()
         {
-            // Lekérjük az összes felhasználót
-            var allUsers = await _unitOfWork.UserRepository.GetAllAsync();
+            var allUsers = await _unitOfWork.UserRepository.GetAsync(
+                filter: null,
+                includeProperties: "MaintenanceSpecialisation"
+            );
 
             // Csak azokat tartjuk meg, akik Karbantartók
             var maintainers = allUsers.Where(u => u.Role == Role.Maintainer).ToList();
@@ -30,7 +32,13 @@ namespace HibaVonal_03.Services.Maintainer
 
         public async Task<UserDto?> GetMaintainerByIdAsync(int maintainerId)
         {
-            var user = await _unitOfWork.UserRepository.GetByIdAsync(maintainerId);
+            // Itt is a GetByIdAsync helyett GetAsync-et használunk a szűréssel és az Include-dal
+            var users = await _unitOfWork.UserRepository.GetAsync(
+                filter: u => u.Id == maintainerId,
+                includeProperties: "MaintenanceSpecialisation"
+            );
+
+            var user = users.FirstOrDefault();
 
             // Ellenőrizzük, hogy létezik-e, és tényleg karbantartó-e
             if (user == null || user.Role != Role.Maintainer)

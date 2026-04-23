@@ -37,6 +37,8 @@ namespace HibaVonal_03
             {
                 // enumok olvasható szöveggé alakítása
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+
+                options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
             }); ;
 
             builder.Services.AddEndpointsApiExplorer(); // Ez segít a Swaggernek feltérképezni a végpontokat

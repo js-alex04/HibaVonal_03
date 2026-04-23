@@ -85,17 +85,24 @@ namespace HibaVonal_03.Controllers.Fault
 
         //Specific operations for Fault
         [HttpPost("{id}/add-feedback")]
-        public async Task<ActionResult> AddFeedback(int faultId, [FromBody] FeedbackCreateDto dto)
+        public async Task<ActionResult> AddFeedback(int id, [FromBody] FeedbackCreateDto dto)
         {
-            var result = await _faultService.NewFeedbackAsync(faultId, dto);
+            try
+            {
+                var result = await _faultService.NewFeedbackAsync(id, dto);
 
-            if (!result)
-            {
-                return NotFound();
+                if (!result)
+                {
+                    return NotFound("A hiba nem található.");
+                }
+                else
+                {
+                    return Ok(result);
+                }
             }
-            else
+            catch (ArgumentException ex)
             {
-                return Ok(result);
+                return BadRequest(ex.Message);
             }
         }
 
@@ -115,7 +122,7 @@ namespace HibaVonal_03.Controllers.Fault
         }
 
         [HttpPut("{id}/set-maintainer-specialisation")]
-        public async Task<ActionResult> SetFaultSpecialisation(int id, [FromBody] int specialisationId)
+        public async Task<ActionResult> SetFaultSpecialisation(int id, int specialisationId)
         {
             var result = await _faultService.SetFaultSpecialisationAsync(id, specialisationId);
 
@@ -130,7 +137,7 @@ namespace HibaVonal_03.Controllers.Fault
         }
 
         [HttpPut("{id}/assign-maintainer")]
-        public async Task<ActionResult> AssignFaultMaintainer(int id, [FromBody] int maintainerId)
+        public async Task<ActionResult> AssignFaultMaintainer(int id, int maintainerId)
         {
             var result = await _faultService.AssignMaintainerAsync(id, maintainerId);
 

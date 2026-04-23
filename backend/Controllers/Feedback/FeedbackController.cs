@@ -15,13 +15,6 @@ namespace HibaVonal_03.Controllers.Feedback
             _feedbackService = feedbackService;
         }
 
-        [HttpPost("{collegiateId}")]
-        public async Task<ActionResult> CreateFeedback(int collegiateId, [FromBody] FeedbackCreateDto newFeedback)
-        {
-            var result = await _feedbackService.CreateFeedbackAsync(newFeedback, collegiateId);
-            return Ok(result);
-        }
-
         [HttpGet]
         public async Task<ActionResult> GetAllFeedbacks()
         {

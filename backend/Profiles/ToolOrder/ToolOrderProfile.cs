@@ -11,6 +11,8 @@ namespace HibaVonal_03.Profiles
             CreateMap<ToolOrder, ToolOrderResponseDto>();
 
             CreateMap<ToolOrderCreateDto, ToolOrder>();
+
+            CreateMap<ToolOrderUpdateDto, Entities.ToolOrder>();
         }
     }
 }

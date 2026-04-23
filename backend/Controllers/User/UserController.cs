@@ -64,7 +64,7 @@ namespace HibaVonal_03.Controllers.User
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateManagementAdmin([FromBody] UserCreateDto body, string role)
+        public async Task<IActionResult> CreateUser([FromBody] UserCreateDto body, string role)
         {
             try
             {
