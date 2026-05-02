@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HibaVonal_03.Migrations
 {
     [DbContext(typeof(HibaVonalDbContext))]
-    [Migration("20260422162402_InitialCreate")]
+    [Migration("20260502193734_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -227,7 +227,7 @@ namespace HibaVonal_03.Migrations
 
                     b.ToTable("Users");
 
-                    b.HasDiscriminator<int>("Role").HasValue(2);
+                    b.HasDiscriminator<int>("Role");
 
                     b.UseTphMappingStrategy();
                 });
@@ -245,6 +245,13 @@ namespace HibaVonal_03.Migrations
                     b.HasIndex("MaintenanceSpecialisationId");
 
                     b.ToTable("MaintainerSpecialisationAssignments", (string)null);
+                });
+
+            modelBuilder.Entity("HibaVonal_03.Entities.Administrator", b =>
+                {
+                    b.HasBaseType("HibaVonal_03.Entities.User");
+
+                    b.HasDiscriminator().HasValue(2);
                 });
 
             modelBuilder.Entity("HibaVonal_03.Entities.Collegiate", b =>
@@ -267,6 +274,13 @@ namespace HibaVonal_03.Migrations
                         .HasColumnType("bit");
 
                     b.HasDiscriminator().HasValue(1);
+                });
+
+            modelBuilder.Entity("HibaVonal_03.Entities.MaintenanceManager", b =>
+                {
+                    b.HasBaseType("HibaVonal_03.Entities.User");
+
+                    b.HasDiscriminator().HasValue(3);
                 });
 
             modelBuilder.Entity("HibaVonal_03.Entities.Appliance", b =>

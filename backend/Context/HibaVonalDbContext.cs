@@ -92,8 +92,8 @@ namespace HibaVonal_03.Context
                 .HasDiscriminator(u => u.Role) // a Role oszlop fogja megkülönböztetni a különböző típusú felhasználókat
                 .HasValue<Collegiate>(Role.Collegiate) // a Kollégista felhasználók Role = Collegiate értéket kapnak
                 .HasValue<Maintainer>(Role.Maintainer) // a Karbantartó felhasználók Role = Maintainer értéket kapnak
-                .HasValue<User>(Role.MaintenanceManager) // a Karbantartásvezető felhasználók Role = MaintenanceManager értéket kapnak, bár a Karbantartásvezetők nem rendelkeznek külön osztállyal, így a User osztályban maradnak (a Role érték alapján megkülönböztetve)
-                .HasValue<User>(Role.Administrator); // az Adminisztrátor felhasználók Role = Administrator értéket kapnak, bár az Adminisztrátorok nem rendelkeznek külön osztállyal, így a User osztályban maradnak (a Role érték alapján megkülönböztetve)
+                .HasValue<MaintenanceManager>(Role.MaintenanceManager) // a Karbantartásvezető felhasználók Role = MaintenanceManager értéket kapnak
+                .HasValue<Administrator>(Role.Administrator); // az Adminisztrátor felhasználók Role = Administrator értéket kapnak
         }
     }
 }

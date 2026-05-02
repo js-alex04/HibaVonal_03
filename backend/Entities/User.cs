@@ -7,7 +7,7 @@
         Administrator,
         MaintenanceManager
     }
-    public class User
+    public abstract class User
     {
         public int Id { get; set; }
         public string Name { get; set; } = null!;
