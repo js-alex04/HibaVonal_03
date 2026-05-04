@@ -47,11 +47,12 @@ namespace HibaVonal_03
             // React frontend build folder configuration
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowReactFrontend", policy =>
+                options.AddPolicy("AllowReactApp", policy =>
                 {
                     policy.WithOrigins("http://localhost:3000") // frontend's port
                           .AllowAnyHeader()
-                          .AllowAnyMethod();
+                          .AllowAnyMethod()
+                          .AllowCredentials();
                 });
             });
 
@@ -127,7 +128,7 @@ namespace HibaVonal_03
             app.UseHttpsRedirection();
 
             // Enable CORS for the React frontend
-            app.UseCors("AllowReactFrontend");
+            app.UseCors("AllowReactApp");
 
             app.UseAuthorization();
 
