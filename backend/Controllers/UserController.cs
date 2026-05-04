@@ -77,6 +77,39 @@ namespace HibaVonal_03.Controllers.User
             }
         }
 
+        [HttpPut("{id}/profile")]
+        public async Task<IActionResult> UpdateUserProfile(int id, [FromBody] UserUpdateDto body)
+        {
+            var result = await _userService.UpdateUserAsync(id, body);
+
+            if (result)
+            {
+                return NoContent();
+            }
+
+            return NotFound("User not found.");
+        }
+
+        [HttpPut("{id}/change-password")]
+        public async Task<IActionResult> ChangePassword(int id, [FromBody] ChangePasswordDto body)
+        {
+            try
+            {
+                var result = await _userService.ChangePasswordAsync(id, body);
+
+                if (result)
+                {
+                    return NoContent();
+                }
+
+                return NotFound("User not found.");
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUserRole(int id, [FromQuery] string newRole)
         {

@@ -13,6 +13,8 @@ namespace HibaVonal_03.Interfaces.User
         Task<UserDto> CreateManagementAdminAsync(UserCreateDto dto, string role);
         Task<List<UserDto>> GetAllUsersAsync();
         Task<UserDto?> GetUserByIdAsync(int id);
+        Task<bool> ChangePasswordAsync(int id, ChangePasswordDto dto);
+        Task<bool> UpdateUserAsync(int id, UserUpdateDto dto);
         Task<bool> UpdateUserRoleAsync(int id, string newRole);
         Task<bool> DeleteUserAsync(int id); 
     }

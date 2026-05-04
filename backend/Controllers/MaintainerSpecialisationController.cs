@@ -51,6 +51,14 @@ namespace HibaVonal_03.Controllers.MaintainerSpecialisation
             }
         }
 
+        [HttpGet("maintainer/{maintainerId}")]
+        public async Task<IActionResult> GetSpecialisationsByMaintainerId(int maintainerId)
+        {
+            var result = await _maintainerSpecialisationService.GetSpecialisationsByMaintainerIdAsync(maintainerId);
+
+            return Ok(result);
+        }
+
         // Update
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateMaintainerSpecialisation(int id, [FromBody] MaintainerSpecialisationUpdateDto body)

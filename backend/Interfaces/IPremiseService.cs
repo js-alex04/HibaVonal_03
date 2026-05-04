@@ -10,5 +10,8 @@ namespace HibaVonal_03.Interfaces.Premise
         Task<PremiseResponseDto> GetPremiseByIdAsync(int id);
         Task<bool> UpdatePremiseAsync(int id, PremiseUpdateDto premise);
         Task<bool> DeletePremiseAsync(int id);
+
+        Task<bool> AddApplianceToPremiseAsync(int premiseId, int applianceId);
+        Task<bool> DeleteApplianceFromPremiseAsync(int premiseId, int applianceId);
     }
 }

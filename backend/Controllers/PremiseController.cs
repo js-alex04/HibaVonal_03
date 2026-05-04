@@ -21,9 +21,15 @@ namespace HibaVonal_03.Controllers.Premise
         [HttpPost]
         public async Task<IActionResult> CreatePremise([FromBody] PremiseCreateDto body)
         {
-            var result = await _premiseService.CreatePremiseAsync(body);
-
-            return CreatedAtAction(nameof(GetPremiseById), new { id = result.Id }, result);
+            try
+            {
+                var result = await _premiseService.CreatePremiseAsync(body);
+                return CreatedAtAction(nameof(GetPremiseById), new { id = result.Id }, result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // Read
@@ -80,6 +86,37 @@ namespace HibaVonal_03.Controllers.Premise
             else
             {
                 return NotFound();
+            }
+        }
+
+        // Specific operations
+        [HttpPut("{premiseId}/add-appliance/{applianceId}")]
+        public async Task<IActionResult> AddApplianceToPremise(int premiseId, int applianceId)
+        {
+            var result = await _premiseService.AddApplianceToPremiseAsync(premiseId, applianceId);
+
+            if (result)
+            {
+                return NoContent();
+            }
+            else
+            {
+                return NotFound("The given premise or appliance was not found.");
+            }
+        }
+
+        [HttpPut("{premiseId}/remove-appliance/{applianceId}")]
+        public async Task<IActionResult> DeleteApplianceFromPremise(int premiseId, int applianceId)
+        {
+            var result = await _premiseService.DeleteApplianceFromPremiseAsync(premiseId, applianceId);
+
+            if (result)
+            {
+                return NoContent();
+            }
+            else
+            {
+                return NotFound("The given appliance was not found or does not belong to the specified premise.");
             }
         }
     }

@@ -125,6 +125,46 @@ namespace HibaVonal_03.Services
             return _mapper.Map<UserDto>(user);
         }
 
+        public async Task<bool> ChangePasswordAsync(int id, ChangePasswordDto dto)
+        {
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(id);
+
+            if (user == null)
+            {
+                return false; // Nem található a felhasználó
+            }
+
+            if (user.Password != dto.CurrentPassword)
+            {
+                throw new ArgumentException("The current password is incorrect.");
+            }
+
+            user.Password = dto.NewPassword;
+
+            _unitOfWork.UserRepository.Update(user);
+            await _unitOfWork.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<bool> UpdateUserAsync(int id, UserUpdateDto dto)
+        {
+            var existingUser = await _unitOfWork.UserRepository.GetByIdAsync(id);
+
+            if (existingUser == null)
+            {
+                return false;
+            }
+
+            existingUser.Name = dto.Name;
+            existingUser.Email = dto.Email;
+
+            _unitOfWork.UserRepository.Update(existingUser);
+            await _unitOfWork.SaveChangesAsync();
+
+            return true;
+        }
+
         public async Task<bool> UpdateUserRoleAsync(int id, string newRole)
         {
             var user = await _unitOfWork.UserRepository.GetByIdAsync(id);

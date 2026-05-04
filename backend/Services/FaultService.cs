@@ -69,10 +69,36 @@ namespace HibaVonal_03.Services.Fault
 
             if (fault == null)
             {
-                return null;
+                throw new ArgumentException($"Fault with Id {id} does not exist.");
             }
+            else
+            {
+                return _mapper.Map<FaultResponseDto>(fault);
+            }
+        }
 
-            return _mapper.Map<FaultResponseDto>(fault);
+        public async Task<List<FaultResponseDto>> GetFaultsByCollegiateIdAsync(int collegiateId)
+        {
+            // Szűrés a CollegiateId alapján, és a kapcsolódó entitások betöltése a DTO számára
+            var faults = await _unitOfWork.FaultRepository.GetAsync(
+                filter: f => f.CollegiateId == collegiateId,
+                includeProperties: "Feedbacks,Collegiate,AssignedMaintenance,Appliance,Premise,ToolOrders"
+            );
+
+            // Visszatérés a DTO listává alakított eredménnyel
+            return _mapper.Map<List<FaultResponseDto>>(faults);
+        }
+
+        public async Task<List<FaultResponseDto>> GetFaultsByMaintainerIdAsync(int maintainerId)
+        {
+            // Szűrés az AssignedMaintenanceId alapján (ehhez vannak rendelve a karbantartók)
+            var faults = await _unitOfWork.FaultRepository.GetAsync(
+                filter: f => f.AssignedMaintenanceId == maintainerId,
+                includeProperties: "Feedbacks,Collegiate,AssignedMaintenance,Appliance,Premise,ToolOrders"
+            );
+
+            // Visszatérés a DTO listává alakított eredménnyel
+            return _mapper.Map<List<FaultResponseDto>>(faults);
         }
 
         //Update

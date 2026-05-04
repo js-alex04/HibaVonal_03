@@ -100,5 +100,49 @@ namespace HibaVonal_03.Services.Premise
             await _unitOfWork.SaveChangesAsync();
             return true;
         }
+
+        public async Task<bool> AddApplianceToPremiseAsync(int premiseId, int applianceId)
+        {
+            // 1. Lekérjük mindkét entitást, hogy megbizonyosodjunk a létezésükről
+            var existingPremise = await _unitOfWork.PremiseRepository.GetByIdAsync(premiseId);
+            var existingAppliance = await _unitOfWork.ApplianceRepository.GetByIdAsync(applianceId);
+
+            // 2. Ha valamelyik nem létezik, visszatérünk hamis értékkel
+            if (existingPremise == null || existingAppliance == null)
+            {
+                return false;
+            }
+
+            // 3. Összerendeljük őket (a berendezés helyiségét beállítjuk)
+            existingAppliance.PremiseId = premiseId;
+
+            // 4. Frissítjük és mentjük az adatbázisba
+            _unitOfWork.ApplianceRepository.Update(existingAppliance);
+            await _unitOfWork.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<bool> DeleteApplianceFromPremiseAsync(int premiseId, int applianceId)
+        {
+            // 1. Lekérjük a berendezést
+            var existingAppliance = await _unitOfWork.ApplianceRepository.GetByIdAsync(applianceId);
+
+            // 2. Ellenőrizzük, hogy létezik-e, és tényleg abban a helyiségben van-e
+            if (existingAppliance == null || existingAppliance.PremiseId != premiseId)
+            {
+                return false;
+            }
+
+            // 3. Eltávolítjuk a helyiségből (null-ra állítjuk a hivatkozást)
+            // Megjegyzés: Ez csak akkor működik, ha a PremiseId az entitásodban nullable (int?).
+            existingAppliance.PremiseId = null;
+
+            // 4. Frissítjük és mentjük
+            _unitOfWork.ApplianceRepository.Update(existingAppliance);
+            await _unitOfWork.SaveChangesAsync();
+
+            return true;
+        }
     }
 }

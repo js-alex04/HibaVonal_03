@@ -64,6 +64,18 @@ namespace HibaVonal_03.Services.MaintainerSpecialisation
             return _mapper.Map<MaintainerSpecialisationResponseDto>(specialisationById);
         }
 
+        public async Task<List<MaintainerSpecialisationResponseDto>> GetSpecialisationsByMaintainerIdAsync(int maintainerId)
+        {
+            // Azt a szakterületet keressük, amelynek a "Maintainers" listájában (Any) 
+            // szerepel olyan karbantartó, akinek az Id-ja megegyezik a keresettel.
+            var specialisations = await _unitOfWork.MaintainerSpecialisationRepository.GetAsync(
+                filter: s => s.Maintainers.Any(m => m.Id == maintainerId)
+            );
+
+            // DTO listává alakítjuk és visszaadjuk
+            return _mapper.Map<List<MaintainerSpecialisationResponseDto>>(specialisations);
+        }
+
         // Update
         public async Task<bool> UpdateMaintainerSpecialisationAsync(int id, MaintainerSpecialisationUpdateDto maintainerSpecialisation)
         {

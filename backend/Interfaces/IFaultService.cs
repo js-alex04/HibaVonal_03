@@ -10,6 +10,8 @@ namespace HibaVonal_03.Interfaces.Fault
         Task<int> CreateFaultAsync(FaultCreateDto fault, int collegiateId);
         Task<List<FaultResponseDto>> GetAllFaultsAsync();
         Task<FaultResponseDto> GetFaultByIdAsync(int faultId);
+        Task<List<FaultResponseDto>> GetFaultsByCollegiateIdAsync(int collegiateId);
+        Task<List<FaultResponseDto>> GetFaultsByMaintainerIdAsync(int maintainerId);
         Task<bool> UpdateFaultAsync(int faultId, FaultUpdateDto fault);
         Task<bool> DeleteFaultAsync(int faultId);
         Task<bool> NewFeedbackAsync(int id, FeedbackCreateDto dto);

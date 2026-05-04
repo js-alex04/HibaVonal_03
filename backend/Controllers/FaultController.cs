@@ -52,6 +52,22 @@ namespace HibaVonal_03.Controllers.Fault
             }
         }
 
+        [HttpGet("{collegiateId}")]
+        public async Task<ActionResult> GetFaultsByCollegiateId(int collegiateId)
+        {
+            var result = await _faultService.GetFaultsByCollegiateIdAsync(collegiateId);
+
+            return Ok(result);
+        }
+
+        [HttpGet("{maintainerId}")]
+        public async Task<ActionResult> GetFaultsByMaintainerId(int maintainerId)
+        {
+            var result = await _faultService.GetFaultsByMaintainerIdAsync(maintainerId);
+
+            return Ok(result);
+        }
+
         [HttpPut("{id}")]
         public async Task<ActionResult> UpdateFault(int id, [FromBody] FaultUpdateDto fault)
         {
