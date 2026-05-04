@@ -16,7 +16,6 @@ namespace HibaVonal_03.Services.Auth
 
         public async Task<UserDto?> LoginAsync(LoginRequestDto request)
         {
-            // Most már használhatjuk az okos GetAsync metódust szűréssel!
             var users = await _unitOfWork.UserRepository.GetAsync(
                 filter: u => u.Email == request.Email && u.Password == request.Password);
 
