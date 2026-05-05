@@ -1,4 +1,4 @@
-﻿namespace HibaVonal_03.DTOs.Fault
+﻿namespace HibaVonal_03.DTOs
 {
     public class FaultUpdateDto
     {

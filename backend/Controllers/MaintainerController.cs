@@ -1,5 +1,4 @@
-﻿using HibaVonal_03.DTOs.Auth;
-using HibaVonal_03.Interfaces.Maintainer;
+﻿using HibaVonal_03.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,37 +19,72 @@ namespace HibaVonal_03.Controllers.Maintainer
         [HttpGet]
         public async Task<IActionResult> GetAllMaintainers()
         {
-            var result = await _maintainerService.GetAllMaintainersAsync();
-            return Ok(result);
+            try
+            {
+                var result = await _maintainerService.GetAllMaintainersAsync();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // Egy adott karbantartó lekérése ID alapján
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetMaintainerById(int id)
+        [HttpGet("{maintainerId}")]
+        public async Task<IActionResult> GetMaintainerById(int maintainerId)
         {
-            var result = await _maintainerService.GetMaintainerByIdAsync(id);
-            if (result == null) return NotFound("Karbantartó nem található.");
-
-            return Ok(result);
+            try
+            {
+                var result = await _maintainerService.GetMaintainerByIdAsync(maintainerId);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // Karbantartók szűrése szakterület (Specialisation) alapján
         [HttpGet("{specialisationId}")]
         public async Task<IActionResult> GetMaintainersBySpecialisationId(int specialisationId)
         {
-            var result = await _maintainerService.GetMaintainersBySpecialisationIdAsync(specialisationId);
-            return Ok(result);
+            try
+            {
+                var result = await _maintainerService.GetMaintainersBySpecialisationIdAsync(specialisationId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // Elérhetőség (betegség, szabadság stb.) módosítása
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateAvailability(int id, [FromQuery] bool isAvailable)
+        [HttpPut("{maintainerId}")]
+        public async Task<IActionResult> UpdateAvailability(int maintainerId, [FromQuery] bool isAvailable)
         {
-            var result = await _maintainerService.UpdateAvailabilityAsync(id, isAvailable);
-
-            if (result) return NoContent();
-
-            return NotFound("Karbantartó nem található.");
+            try
+            {
+                var result = await _maintainerService.UpdateAvailabilityAsync(maintainerId, isAvailable);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

@@ -1,10 +1,7 @@
-﻿namespace HibaVonal_03.DTOs.Collegiate
+﻿namespace HibaVonal_03.DTOs
 {
-    public class CollegiateCreateDto
+    public class CollegiateCreateDto : UserCreateDto
     {
-        public string Name { get; set; } = null!;
-        public string Email { get; set; } = null!;
-        public string Password { get; set; } = null!;
         public int DormRoomId { get; set; }
     }
 }

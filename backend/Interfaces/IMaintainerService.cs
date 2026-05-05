@@ -1,12 +1,12 @@
-﻿using HibaVonal_03.DTOs.Auth;
+﻿using HibaVonal_03.DTOs;
 
-namespace HibaVonal_03.Interfaces.Maintainer
+namespace HibaVonal_03.Interfaces
 {
     public interface IMaintainerService
     {
-        Task<List<UserDto>> GetAllMaintainersAsync();
-        Task<UserDto?> GetMaintainerByIdAsync(int maintainerId);
-        Task<List<UserDto>> GetMaintainersBySpecialisationIdAsync(int specialisationId);
-        Task<bool> UpdateAvailabilityAsync(int maintainerId, bool isAvailable);
+        Task<List<MaintainerResponseDto>> GetAllMaintainersAsync();
+        Task<MaintainerResponseDto> GetMaintainerByIdAsync(int maintainerId);
+        Task<List<MaintainerResponseDto>> GetMaintainersBySpecialisationIdAsync(int specialisationId);
+        Task<MaintainerResponseDto> UpdateAvailabilityAsync(int maintainerId, bool isAvailable);
     }
 }

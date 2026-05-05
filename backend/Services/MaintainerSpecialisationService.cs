@@ -1,9 +1,10 @@
 ﻿using AutoMapper;
-using HibaVonal_03.DTOs.MaintainerSpecialisation;
-using HibaVonal_03.Interfaces.MaintainerSpecialisation;
+using HibaVonal_03.DTOs;
+using HibaVonal_03.Entities;
+using HibaVonal_03.Interfaces;
 using HibaVonal_03.Repositories;
 
-namespace HibaVonal_03.Services.MaintainerSpecialisation
+namespace HibaVonal_03.Services
 {
     public class MaintainerSpecialisationService : IMaintainerSpecialisationService
     {
@@ -16,19 +17,21 @@ namespace HibaVonal_03.Services.MaintainerSpecialisation
             _mapper = mapper;
         }
 
-        // CRUD négy alapművelet implementációja a MaintainerSpecialisation entitásra
         // Create
         public async Task<MaintainerSpecialisationResponseDto> CreateMaintainerSpecialisationAsync(MaintainerSpecialisationCreateDto maintainerSpecialisation)
         {
             // 1. lépés: Ellenőrizzük, hogy a név egyedi-e
-            var allSpecialisations = await _unitOfWork.MaintainerSpecialisationRepository.GetAllAsync();
-            if (allSpecialisations.Any(ms => ms.Name.Equals(maintainerSpecialisation.Name, StringComparison.OrdinalIgnoreCase)))
+            var existingSpecialisations = await _unitOfWork.MaintainerSpecialisationRepository.GetAsync(
+                ms => ms.Name.ToLower() == maintainerSpecialisation.Name.Trim().ToLower());
+
+
+            if (existingSpecialisations.Any())
             {
-                throw new ArgumentException($"Maintainer specialisation with name '{maintainerSpecialisation.Name}' already exists.");
+                throw new InvalidOperationException($"A karbantartói szakterület a megadott névvel ({maintainerSpecialisation.Name}) már létezik.");
             }
 
             // 2. lépés: Létrehozzuk a MaintainerSpecialisation entitást a DTO alapján
-            var newSpecialisation = _mapper.Map<Entities.MaintainerSpecialisation>(maintainerSpecialisation);
+            var newSpecialisation = _mapper.Map<MaintainerSpecialisation>(maintainerSpecialisation);
 
             // 3. lépés: Hozzáadjuk az új szakterületet az adatbázishoz
             await _unitOfWork.MaintainerSpecialisationRepository.AddAsync(newSpecialisation);
@@ -49,16 +52,11 @@ namespace HibaVonal_03.Services.MaintainerSpecialisation
         }
 
         // Read by ID
-        public async Task<MaintainerSpecialisationResponseDto> GetMaintainerSpecialisationByIdAsync(int id)
+        public async Task<MaintainerSpecialisationResponseDto> GetMaintainerSpecialisationByIdAsync(int maintainerSpecialisationId)
         {
             // 1. lépés: Lekérjük a szakterületet az adatbázisból az ID alapján
-            var specialisationById = await _unitOfWork.MaintainerSpecialisationRepository.GetByIdAsync(id);
-
-            // Opcionális: Ellenőrizzük, hogy a szakterület létezik-e
-            if (specialisationById == null)
-            {
-                throw new KeyNotFoundException($"Maintainer specialisation with ID '{id}' not found.");
-            }
+            var specialisationById = await _unitOfWork.MaintainerSpecialisationRepository.GetByIdAsync(maintainerSpecialisationId)
+                ?? throw new KeyNotFoundException($"A karbantartói szakterület a megadott azonosítóval ({maintainerSpecialisationId}) nem található.");
 
             // 2. lépés: Visszaadjuk a szakterületet DTO formában
             return _mapper.Map<MaintainerSpecialisationResponseDto>(specialisationById);
@@ -66,51 +64,43 @@ namespace HibaVonal_03.Services.MaintainerSpecialisation
 
         public async Task<List<MaintainerSpecialisationResponseDto>> GetSpecialisationsByMaintainerIdAsync(int maintainerId)
         {
-            // Azt a szakterületet keressük, amelynek a "Maintainers" listájában (Any) 
-            // szerepel olyan karbantartó, akinek az Id-ja megegyezik a keresettel.
+            var maintainer = await _unitOfWork.MaintainerRepository.GetByIdAsync(maintainerId)
+                ?? throw new KeyNotFoundException($"A karbantartó a megadott azonosítóval ({maintainerId}) nem található.");
+
             var specialisations = await _unitOfWork.MaintainerSpecialisationRepository.GetAsync(
-                filter: s => s.Maintainers.Any(m => m.Id == maintainerId)
-            );
+                s => s.Maintainers.Any(m => m.Id == maintainerId));
 
             // DTO listává alakítjuk és visszaadjuk
             return _mapper.Map<List<MaintainerSpecialisationResponseDto>>(specialisations);
         }
 
         // Update
-        public async Task<bool> UpdateMaintainerSpecialisationAsync(int id, MaintainerSpecialisationUpdateDto maintainerSpecialisation)
+        public async Task<MaintainerSpecialisationResponseDto> UpdateMaintainerSpecialisationAsync(int maintainerSpecialisationId, MaintainerSpecialisationUpdateDto maintainerSpecialisation)
         {
             // 1. lépés: Lekérjük a szakterületet az adatbázisból az ID alapján
-            var existingSpecialisation = await _unitOfWork.MaintainerSpecialisationRepository.GetByIdAsync(id);
-
-            // Opcionális: Ellenőrizzük, hogy a szakterület létezik-e
-            if (existingSpecialisation == null)
-            {
-                return false;
-            }
+            var existingSpecialisation = await _unitOfWork.MaintainerSpecialisationRepository.GetByIdAsync(maintainerSpecialisationId)
+                ?? throw new KeyNotFoundException($"A karbantartói szakterület a megadott azonosítóval ({maintainerSpecialisationId}) nem található.");
 
             // 2. lépés: Frissítjük a szakterület adatait a DTO alapján
             _mapper.Map(maintainerSpecialisation, existingSpecialisation);
+
             _unitOfWork.MaintainerSpecialisationRepository.Update(existingSpecialisation);
+
             await _unitOfWork.SaveChangesAsync();
-            return true;
+
+            return _mapper.Map<MaintainerSpecialisationResponseDto>(existingSpecialisation);
         }
 
         // Delete
-        public async Task<bool> DeleteMaintainerSpecialisationAsync(int id)
+        public async Task DeleteMaintainerSpecialisationAsync(int maintainerSpecialisationId)
         {
             // 1. lépés: Lekérjük a szakterületet az adatbázisból az ID alapján
-            var existingSpecialisation = await _unitOfWork.MaintainerSpecialisationRepository.GetByIdAsync(id);
-
-            // Opcionális: Ellenőrizzük, hogy a szakterület létezik-e
-            if (existingSpecialisation == null)
-            {
-                return false;
-            }
+            var existingSpecialisation = await _unitOfWork.MaintainerSpecialisationRepository.GetByIdAsync(maintainerSpecialisationId)
+                ?? throw new KeyNotFoundException($"A karbantartói szakterület a megadott azonosítóval ({maintainerSpecialisationId}) nem található.");
 
             // 2. lépés: Töröljük a szakterületet az adatbázisból
             _unitOfWork.MaintainerSpecialisationRepository.Delete(existingSpecialisation);
             await _unitOfWork.SaveChangesAsync();
-            return true;
         }
     }
 }

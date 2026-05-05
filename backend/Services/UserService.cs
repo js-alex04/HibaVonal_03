@@ -1,10 +1,7 @@
 ﻿using AutoMapper;
-using HibaVonal_03.DTOs.Auth;
-using HibaVonal_03.DTOs.Collegiate;
-using HibaVonal_03.DTOs.Maintainer;
-using HibaVonal_03.DTOs.User;
+using HibaVonal_03.DTOs;
 using HibaVonal_03.Entities;
-using HibaVonal_03.Interfaces.User;
+using HibaVonal_03.Interfaces;
 using HibaVonal_03.Repositories;
 
 namespace HibaVonal_03.Services
@@ -20,23 +17,49 @@ namespace HibaVonal_03.Services
             _mapper = mapper;
         }
 
-        public async Task<UserDto> CreateCollegiateAsync(CollegiateCreateDto dto)
+        public async Task<UserResponseDto> CreateAdministratorAsync(UserCreateDto dto)
+        {
+            var existingUsers = await _unitOfWork.UserRepository.GetAsync(u => u.Email == dto.Email);
+            if (existingUsers.Any()) throw new InvalidOperationException("Ez az email cím már foglalt!");
+
+            var admin = _mapper.Map<User>(dto);
+            admin.Role = Role.Administrator;
+            admin.Password = dto.Password;
+
+            await _unitOfWork.UserRepository.AddAsync(admin);
+            await _unitOfWork.SaveChangesAsync();
+
+            return _mapper.Map<UserResponseDto>(admin);
+        }
+
+        public async Task<UserResponseDto> CreateMaintenanceManagerAsync(UserCreateDto dto)
+        {
+            var existingUsers = await _unitOfWork.UserRepository.GetAsync(filter: u => u.Email == dto.Email);
+            if (existingUsers.Any()) throw new InvalidOperationException("Ez az email cím már foglalt!");
+
+            var manager = _mapper.Map<User>(dto);
+            manager.Role = Role.MaintenanceManager;
+            manager.Password = dto.Password;
+
+            await _unitOfWork.UserRepository.AddAsync(manager);
+            await _unitOfWork.SaveChangesAsync();
+
+            return _mapper.Map<UserResponseDto>(manager);
+        }
+
+        public async Task<UserResponseDto> CreateCollegiateAsync(CollegiateCreateDto dto)
         {
             // 1. Ellenőrizzük, hogy az email foglalt-e már
-            var allUsers = await _unitOfWork.UserRepository.GetAllAsync();
-            if (allUsers.Any(u => u.Email == dto.Email))
-            {
-                throw new ArgumentException("Ez az email cím már foglalt!");
-            }
+            var existingUsers = await _unitOfWork.UserRepository.GetAsync(filter: u => u.Email == dto.Email);
+            if (existingUsers.Any()) throw new InvalidOperationException("Ez az email cím már foglalt!");
 
             // 2. Ellenőrizzük, hogy létezik-e a megadott szoba
             if (await _unitOfWork.PremiseRepository.GetByIdAsync(dto.DormRoomId) == null)
-            {
-                throw new ArgumentException($"A {dto.DormRoomId} azonosítójú szoba nem található.");
-            }
+                throw new InvalidOperationException($"A {dto.DormRoomId} azonosítójú szoba nem található.");
+
 
             // 3. Mapelés és adatok beállítása
-            var collegiate = _mapper.Map<Entities.Collegiate>(dto);
+            var collegiate = _mapper.Map<Collegiate>(dto);
             collegiate.Role = Role.Collegiate;
 
             // 4. Jelszó
@@ -45,17 +68,13 @@ namespace HibaVonal_03.Services
             await _unitOfWork.UserRepository.AddAsync(collegiate);
             await _unitOfWork.SaveChangesAsync();
 
-            return _mapper.Map<UserDto>(collegiate);
+            return _mapper.Map<UserResponseDto>(collegiate);
         }
 
-        public async Task<UserDto> CreateMaintainerAsync(MaintainerCreateDto dto)
+        public async Task<UserResponseDto> CreateMaintainerAsync(MaintainerCreateDto dto)
         {
-            var allUsers = await _unitOfWork.UserRepository.GetAllAsync();
-
-            if (allUsers.Any(u => u.Email == dto.Email))
-            {
-                throw new ArgumentException($"EMail is already taken: {dto.Email}");
-            }
+            var existingUsers = await _unitOfWork.UserRepository.GetAsync(filter: u => u.Email == dto.Email);
+            if (existingUsers.Any()) throw new InvalidOperationException("Ez az email cím már foglalt!");
 
             var maintainer = _mapper.Map<Entities.Maintainer>(dto);
             maintainer.Role = Role.Maintainer;
@@ -66,95 +85,56 @@ namespace HibaVonal_03.Services
             {
                 foreach (var specId in dto.SpecialisationIds)
                 {
-                    var spec = await _unitOfWork.MaintainerSpecialisationRepository.GetByIdAsync(specId);
-                    if (spec != null)
-                    {
-                        maintainer.MaintenanceSpecialisation.Add(spec);
-                    }
+                    var spec = await _unitOfWork.MaintainerSpecialisationRepository.GetByIdAsync(specId)
+                        ?? throw new InvalidOperationException($"A {specId} azonosítójú szakterület nem található.");
+
+                    maintainer.MaintenanceSpecialisation.Add(spec);
                 }
+            }
+            else
+            {
+                throw new InvalidOperationException("Legalább egy szakterületet meg kell adni!");
             }
 
             await _unitOfWork.UserRepository.AddAsync(maintainer);
             await _unitOfWork.SaveChangesAsync();
 
-            return _mapper.Map<UserDto>(maintainer);
+            return _mapper.Map<UserResponseDto>(maintainer);
         }
 
-        public async Task<UserDto> CreateManagementAdminAsync(UserCreateDto dto, string role)
+        public async Task<List<UserResponseDto>> GetAllUsersAsync()
         {
-            var allUsers = await _unitOfWork.UserRepository.GetAllAsync();
-            if (allUsers.Any(u => u.Email == dto.Email))
-            {
-                throw new ArgumentException("Ez az email cím már foglalt!");
-            }
+            var users = await _unitOfWork.UserRepository.GetAsync(null, 
+                "MaintenanceSpecialisation,DormRoom,ReportedFaults,Feedbacks");
 
-            if (!Enum.TryParse<Role>(role, true, out var parsedRole))
-            {
-                throw new ArgumentException("Érvénytelen szerepkör!");
-            }
-
-            var admin = _mapper.Map<User>(dto);
-            admin.Role = parsedRole;
-            admin.Password = dto.Password;
-
-            await _unitOfWork.UserRepository.AddAsync(admin);
-            await _unitOfWork.SaveChangesAsync();
-
-            return _mapper.Map<UserDto>(admin);
+            return _mapper.Map<List<UserResponseDto>>(users);
         }
 
-        public async Task<List<UserDto>> GetAllUsersAsync()
+        public async Task<UserResponseDto> GetUserByIdAsync(int userId)
         {
-            var users = await _unitOfWork.UserRepository.GetAsync(
-                filter: null,
-                includeProperties: "MaintenanceSpecialisation"
-            );
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(userId,
+                "MaintenanceSpecialisation,DormRoom,ReportedFaults,Feedbacks")
+                ?? throw new KeyNotFoundException($"A felhasználó a megadott azonosítóval ({userId}) nem található.");
 
-            return _mapper.Map<List<UserDto>>(users);
+            return _mapper.Map<UserResponseDto>(user);
         }
 
-        public async Task<UserDto?> GetUserByIdAsync(int id)
+        public async Task<UserResponseDto> LoginAsync(UserLoginRequestDto request)
         {
-            var user = await _unitOfWork.UserRepository.GetByIdAsync(id);
+            var user = (await _unitOfWork.UserRepository.GetAsync(
+                u => u.Email == request.Email)).FirstOrDefault()
+                ?? throw new InvalidOperationException("Érvénytelen email cím vagy jelszó.");
 
-            if (user == null)
-            {
-                return null;
-            }
+            if (user.Password != request.Password)
+                throw new InvalidOperationException("Érvénytelen email cím vagy jelszó.");
 
-            return _mapper.Map<UserDto>(user);
+            return _mapper.Map<UserResponseDto>(user);
         }
 
-        public async Task<bool> ChangePasswordAsync(int id, ChangePasswordDto dto)
+        public async Task<UserResponseDto> UpdateUserProfileAsync(int userId, UserUpdateDto dto)
         {
-            var user = await _unitOfWork.UserRepository.GetByIdAsync(id);
-
-            if (user == null)
-            {
-                return false; // Nem található a felhasználó
-            }
-
-            if (user.Password != dto.CurrentPassword)
-            {
-                throw new ArgumentException("The current password is incorrect.");
-            }
-
-            user.Password = dto.NewPassword;
-
-            _unitOfWork.UserRepository.Update(user);
-            await _unitOfWork.SaveChangesAsync();
-
-            return true;
-        }
-
-        public async Task<bool> UpdateUserAsync(int id, UserUpdateDto dto)
-        {
-            var existingUser = await _unitOfWork.UserRepository.GetByIdAsync(id);
-
-            if (existingUser == null)
-            {
-                return false;
-            }
+            var existingUser = await _unitOfWork.UserRepository.GetByIdAsync(userId)
+                ?? throw new KeyNotFoundException($"A felhasználó a megadott azonosítóval ({userId}) nem található.");
 
             existingUser.Name = dto.Name;
             existingUser.Email = dto.Email;
@@ -162,43 +142,43 @@ namespace HibaVonal_03.Services
             _unitOfWork.UserRepository.Update(existingUser);
             await _unitOfWork.SaveChangesAsync();
 
-            return true;
+            return _mapper.Map<UserResponseDto>(existingUser);
         }
 
-        public async Task<bool> UpdateUserRoleAsync(int id, string newRole)
+        public async Task ChangePasswordAsync(int userId, ChangePasswordDto dto)
         {
-            var user = await _unitOfWork.UserRepository.GetByIdAsync(id);
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(userId)
+                ?? throw new KeyNotFoundException($"A felhasználó a megadott azonosítóval ({userId}) nem található.");
 
-            if (user == null)
-            {
-                return false;
-            }
+            if (user.Password != dto.CurrentPassword)
+                throw new InvalidOperationException("The current password is incorrect.");
 
-            if (Enum.TryParse<Role>(newRole, true, out var parsedRole))
-            {
-                user.Role = parsedRole;
-                _unitOfWork.UserRepository.Update(user);
-                await _unitOfWork.SaveChangesAsync();
-                return true;
-            }
-            else
-            {
-                throw new ArgumentException($"Invalid role: {newRole}");
-            }
+            user.Password = dto.NewPassword;
+
+            _unitOfWork.UserRepository.Update(user);
+            await _unitOfWork.SaveChangesAsync();
         }
 
-        public async Task<bool> DeleteUserAsync(int id)
+        public async Task ChangeUserRoleAsync(int userId, Role newRole)
         {
-            var user = await _unitOfWork.UserRepository.GetByIdAsync(id);
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(userId)
+                ?? throw new KeyNotFoundException($"A felhasználó a megadott azonosítóval ({userId}) nem található.");
 
-            if (user == null)
-            {
-                return false;
-            }
+            if (user.Role == newRole)
+                throw new InvalidOperationException($"A felhasználó már rendelkezik a megadott szerepkörrel ({newRole}).");
+
+            user.Role = newRole;
+            _unitOfWork.UserRepository.Update(user);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        public async Task DeleteUserAsync(int userId)
+        {
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(userId)
+                ?? throw new KeyNotFoundException($"A felhasználó a megadott azonosítóval ({userId}) nem található.");
 
             _unitOfWork.UserRepository.Delete(user);
             await _unitOfWork.SaveChangesAsync();
-            return true;
         }
     }
 }

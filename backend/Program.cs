@@ -1,27 +1,13 @@
 using AutoMapper;
 using HibaVonal_03.Context;
-using HibaVonal_03.Interfaces.Appliance;
-using HibaVonal_03.Interfaces.Auth;
-using HibaVonal_03.Interfaces.Fault;
-using HibaVonal_03.Interfaces.Feedback;
-using HibaVonal_03.Interfaces.Maintainer;
-using HibaVonal_03.Interfaces.MaintainerSpecialisation;
-using HibaVonal_03.Interfaces.Premise;
-using HibaVonal_03.Interfaces.ToolOrder;
-using HibaVonal_03.Interfaces.User;
+using HibaVonal_03.DTOs;
+using HibaVonal_03.Interfaces;
 using HibaVonal_03.Profiles;
 using HibaVonal_03.Repositories;
 using HibaVonal_03.Services;
-using HibaVonal_03.Services.Appliance;
-using HibaVonal_03.Services.Auth;
-using HibaVonal_03.Services.Fault;
-using HibaVonal_03.Services.Feedback;
-using HibaVonal_03.Services.Maintainer;
-using HibaVonal_03.Services.MaintainerSpecialisation;
-using HibaVonal_03.Services.Premise;
-using HibaVonal_03.Services.ToolOrder;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 namespace HibaVonal_03
 {
@@ -35,11 +21,46 @@ namespace HibaVonal_03
 
             builder.Services.AddControllers().AddJsonOptions(options =>
             {
-                // enumok olvasható szöveggé alakítása
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-
                 options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-            }); ;
+
+                options.JsonSerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver
+                {
+                    Modifiers =
+        {
+            typeInfo =>
+            {
+                // Csak a UserResponseDto-ra és az abból származókra (Collegiate, Maintainer) alkalmazzuk
+                if (typeInfo.Type == typeof(UserResponseDto) || typeInfo.Type.IsSubclassOf(typeof(UserResponseDto)))
+                {
+                    // 1. ELTÜNTETJÜK a polimorfizmust (ezzel kinyírjuk a $type mezőt)
+                    typeInfo.PolymorphismOptions = null;
+
+                    // 2. SORBA RENDEZZÜK a mezőket
+                    // Kimentjük a meglévő mezőket, majd töröljük a listát
+                    var props = typeInfo.Properties.ToList();
+                    typeInfo.Properties.Clear();
+
+                    // Definiálunk egy prioritási sorrendet (kisebb szám = előrébb kerül)
+                    int GetOrder(string name) => name.ToLower() switch
+                    {
+                        "id" => 1,
+                        "name" => 2,
+                        "email" => 3,
+                        "role" => 4,
+                        _ => 10 // Minden más (extra mezők) a végére kerül
+                    };
+
+                    // Visszatöltjük a mezőket a megadott sorrendben
+                    foreach (var prop in props.OrderBy(p => GetOrder(p.Name)))
+                    {
+                        typeInfo.Properties.Add(prop);
+                    }
+                }
+            }
+        }
+                };
+            });
 
             builder.Services.AddEndpointsApiExplorer(); // Ez segít a Swaggernek feltérképezni a végpontokat
             builder.Services.AddSwaggerGen();           // Ez generálja a Swagger dokumentációt
@@ -61,9 +82,6 @@ namespace HibaVonal_03
 
             // regisztráljuk az ApplianceService-t (IApplianceService és ApplianceService) a dependency injection konténerbe
             builder.Services.AddScoped<IApplianceService, ApplianceService>();
-
-            // regisztráljuk az AuthService-t (IAuthService és AuthService) a dependency injection konténerbe
-            builder.Services.AddScoped<IAuthService, AuthService>();
 
             // regisztráljuk a FaultService-t (IFaultService és FaultService) a dependency injection konténerbe
             builder.Services.AddScoped<IFaultService, FaultService>();

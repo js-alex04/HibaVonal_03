@@ -1,5 +1,6 @@
-﻿using HibaVonal_03.DTOs.MaintainerSpecialisation;
-using HibaVonal_03.Interfaces.MaintainerSpecialisation;
+﻿using HibaVonal_03.DTOs;
+using HibaVonal_03.Entities;
+using HibaVonal_03.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,78 +17,112 @@ namespace HibaVonal_03.Controllers.MaintainerSpecialisation
             _maintainerSpecialisationService = maintainerSpecialisationService;
         }
 
-        // CRUD négy alapművelet a MaintainerSpecialisation entitásra
         // Create
         [HttpPost]
         public async Task<IActionResult> CreateMaintainerSpecialisation([FromBody] MaintainerSpecialisationCreateDto body)
         {
-            var result = await _maintainerSpecialisationService.CreateMaintainerSpecialisationAsync(body);
-
-            return CreatedAtAction(nameof(GetMaintainerSpecialisationById), new { id = result.Id }, result);
+            try
+            {
+                var result = await _maintainerSpecialisationService.CreateMaintainerSpecialisationAsync(body);
+                return CreatedAtAction(nameof(GetMaintainerSpecialisationById), new { id = result.Id }, result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // Read
         [HttpGet]
         public async Task<IActionResult> GetAllMaintainerSpecialisations()
         {
-            var result = await _maintainerSpecialisationService.GetAllMaintainerSpecialisationsAsync();
-
-            return Ok(result);
+            try
+            {
+                var result = await _maintainerSpecialisationService.GetAllMaintainerSpecialisationsAsync();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // Read by ID
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetMaintainerSpecialisationById(int id)
+        [HttpGet("{maintainerSpecialisationId}")]
+        public async Task<IActionResult> GetMaintainerSpecialisationById(int maintainerSpecialisationId)
         {
-            var result = await _maintainerSpecialisationService.GetMaintainerSpecialisationByIdAsync(id);
-
-            if (result == null)
+            try
             {
-                return NotFound();
-            }
-            else
-            {
+                var result = await _maintainerSpecialisationService.GetMaintainerSpecialisationByIdAsync(maintainerSpecialisationId);
                 return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
             }
         }
 
         [HttpGet("maintainer/{maintainerId}")]
         public async Task<IActionResult> GetSpecialisationsByMaintainerId(int maintainerId)
         {
-            var result = await _maintainerSpecialisationService.GetSpecialisationsByMaintainerIdAsync(maintainerId);
-
-            return Ok(result);
+            try
+            {
+                var result = await _maintainerSpecialisationService.GetSpecialisationsByMaintainerIdAsync(maintainerId);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // Update
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateMaintainerSpecialisation(int id, [FromBody] MaintainerSpecialisationUpdateDto body)
+        [HttpPut("{maintainerSpecialisationId}")]
+        public async Task<IActionResult> UpdateMaintainerSpecialisation(int maintainerSpecialisationId, [FromBody] MaintainerSpecialisationUpdateDto body)
         {
-            var result = await _maintainerSpecialisationService.UpdateMaintainerSpecialisationAsync(id, body);
-
-            if (result)
+            try
             {
-                return NoContent();
+                var result = await _maintainerSpecialisationService.UpdateMaintainerSpecialisationAsync(maintainerSpecialisationId, body);
+                return Ok(result);
             }
-            else
+            catch (KeyNotFoundException ex)
             {
-                return NotFound();
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
             }
         }
 
         // Delete
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteMaintainerSpecialisation(int id)
+        [HttpDelete("{maintainerSpecialisationId}")]
+        public async Task<IActionResult> DeleteMaintainerSpecialisation(int maintainerSpecialisationId)
         {
-            var result = await _maintainerSpecialisationService.DeleteMaintainerSpecialisationAsync(id);
-
-            if (result)
+            try
             {
+                await _maintainerSpecialisationService.DeleteMaintainerSpecialisationAsync(maintainerSpecialisationId);
                 return NoContent();
             }
-            else
+            catch (KeyNotFoundException ex)
             {
-                return NotFound();
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
             }
         }
     }

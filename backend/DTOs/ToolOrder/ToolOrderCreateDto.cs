@@ -1,8 +1,7 @@
-﻿namespace HibaVonal_03.DTOs.ToolOrder
+﻿namespace HibaVonal_03.DTOs
 {
     public class ToolOrderCreateDto
     {
-        public int FaultId { get; set; }
         public string ToolName { get; set; } = null!;
         public int Quantity { get; set; }
     }

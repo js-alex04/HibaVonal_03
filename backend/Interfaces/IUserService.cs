@@ -1,21 +1,20 @@
-﻿using HibaVonal_03.DTOs.Auth;
-using HibaVonal_03.DTOs.Collegiate;
-using HibaVonal_03.DTOs.Maintainer;
-using HibaVonal_03.DTOs.User;
+﻿using HibaVonal_03.DTOs;
+using HibaVonal_03.Entities;
 
-namespace HibaVonal_03.Interfaces.User
+namespace HibaVonal_03.Interfaces
 {
     public interface IUserService
     {
-        // CRUD négy alapművelet
-        Task<UserDto> CreateCollegiateAsync(CollegiateCreateDto dto);
-        Task<UserDto> CreateMaintainerAsync(MaintainerCreateDto dto);
-        Task<UserDto> CreateManagementAdminAsync(UserCreateDto dto, string role);
-        Task<List<UserDto>> GetAllUsersAsync();
-        Task<UserDto?> GetUserByIdAsync(int id);
-        Task<bool> ChangePasswordAsync(int id, ChangePasswordDto dto);
-        Task<bool> UpdateUserAsync(int id, UserUpdateDto dto);
-        Task<bool> UpdateUserRoleAsync(int id, string newRole);
-        Task<bool> DeleteUserAsync(int id); 
+        Task<UserResponseDto> CreateAdministratorAsync(UserCreateDto dto); // adminisztrátor
+        Task<UserResponseDto> CreateMaintenanceManagerAsync(UserCreateDto dto); // karbantartási vezető
+        Task<UserResponseDto> CreateCollegiateAsync(CollegiateCreateDto dto); // kollegista
+        Task<UserResponseDto> CreateMaintainerAsync(MaintainerCreateDto dto); // karbantartó
+        Task<List<UserResponseDto>> GetAllUsersAsync();
+        Task<UserResponseDto> GetUserByIdAsync(int userId);
+        Task<UserResponseDto> LoginAsync(UserLoginRequestDto request);
+        Task<UserResponseDto> UpdateUserProfileAsync(int userId, UserUpdateDto dto); // Alap adatok (Név, Email)
+        Task ChangePasswordAsync(int userId, ChangePasswordDto dto); // Jelszó csere
+        Task ChangeUserRoleAsync(int userId, Role newRole); // Adminisztrátori jogkör módosítás
+        Task DeleteUserAsync(int userId);
     }
 }

@@ -1,9 +1,9 @@
 ﻿using AutoMapper;
-using HibaVonal_03.DTOs.Appliance;
-using HibaVonal_03.Interfaces.Appliance;
+using HibaVonal_03.DTOs;
+using HibaVonal_03.Interfaces;
 using HibaVonal_03.Repositories;
 
-namespace HibaVonal_03.Services.Appliance
+namespace HibaVonal_03.Services
 {
     public class ApplianceService : IApplianceService
     {
@@ -16,16 +16,11 @@ namespace HibaVonal_03.Services.Appliance
             _mapper = mapper;
         }
 
-        // CRUD négy alapművelet implementációja az Appliance entitásra
-        // Create
         public async Task<ApplianceResponseDto> CreateApplianceAsync(ApplianceCreateDto appliance)
         {
             // 1. lépés: Ellenőrizzük, hogy a megadott helyiség létezik-e
-            var premiseExists = await _unitOfWork.PremiseRepository.GetByIdAsync(appliance.PremiseId);
-            if (premiseExists == null)
-            {
-                throw new ArgumentException($"A premise with ID {appliance.PremiseId} does not exist.");
-            }
+            var premiseExists = await _unitOfWork.PremiseRepository.GetByIdAsync(appliance.PremiseId) 
+                ?? throw new KeyNotFoundException($"A helyiség a megadott azonosítóval ({appliance.PremiseId}) nem létezik.");
 
             // 2. lépés: Leképezzük a DTO-t az Appliance entitásra
             var newAppliance = _mapper.Map<Entities.Appliance>(appliance);
@@ -49,57 +44,42 @@ namespace HibaVonal_03.Services.Appliance
         }
 
         // Read by ID
-        public async Task<ApplianceResponseDto> GetApplianceByIdAsync(int id)
+        public async Task<ApplianceResponseDto> GetApplianceByIdAsync(int applianceId)
         {
             // 1. lépés: Lekérjük a berendezést az adatbázisból az ID alapján
-            var applianceById = await _unitOfWork.ApplianceRepository.GetByIdAsync(id, includeProperties: "Premise");
-
-            // Opcionális: Ellenőrizzük, hogy a berendezés létezik-e
-            if (applianceById == null)
-            {
-                throw new KeyNotFoundException($"An appliance with ID {id} was not found.");
-            }
+            var applianceById = await _unitOfWork.ApplianceRepository.GetByIdAsync(applianceId, includeProperties: "Premise")
+                ?? throw new KeyNotFoundException($"A berendezés a megadott azonosítóval ({applianceId}) nem létezik.");
 
             // 2. lépés: Leképezzük az entitást DTO-ra és visszaadjuk
             return _mapper.Map<ApplianceResponseDto>(applianceById);
         }
 
         // Update
-        public async Task<bool> UpdateApplianceAsync(int id, ApplianceUpdateDto appliance)
+        public async Task<ApplianceResponseDto> UpdateApplianceAsync(int applianceId, ApplianceUpdateDto appliance)
         {
             // 1. lépés: Lekérjük a berendezést az adatbázisból az ID alapján
-            var existingAppliance = await _unitOfWork.ApplianceRepository.GetByIdAsync(id);
-
-            // Opcionális: Ellenőrizzük, hogy a berendezés létezik-e
-            if (existingAppliance == null)
-            {
-                return false;
-            }
+            var existingAppliance = await _unitOfWork.ApplianceRepository.GetByIdAsync(applianceId)
+                ?? throw new KeyNotFoundException($"A berendezés a megadott azonosítóval ({applianceId}) nem létezik.");
 
             // 2. lépés: Mappeljük a DTO-t a meglévő entitásra
             _mapper.Map(appliance, existingAppliance);
             _unitOfWork.ApplianceRepository.Update(existingAppliance);
             await _unitOfWork.SaveChangesAsync();
-            return true;
+
+            //3. lépés: Visszaadjuk a frissített berendezést DTO formátumban
+            return _mapper.Map<ApplianceResponseDto>(existingAppliance);
         }
 
         // Delete
-        public async Task<bool> DeleteApplianceAsync(int id)
+        public async Task DeleteApplianceAsync(int applianceId)
         {
             // 1. lépés: Lekérjük a berendezést az adatbázisból az ID alapján
-            var applianceToDelete = await _unitOfWork.ApplianceRepository.GetByIdAsync(id);
-
-            // Opcionális: Ellenőrizzük, hogy a berendezés létezik-e
-            if (applianceToDelete == null)
-            {
-                return false;
-            }
+            var applianceToDelete = await _unitOfWork.ApplianceRepository.GetByIdAsync(applianceId)
+                ?? throw new KeyNotFoundException($"A berendezés a megadott azonosítóval ({applianceId}) nem létezik.");
 
             // 2. lépés: Töröljük a berendezést az adatbázisból
             _unitOfWork.ApplianceRepository.Delete(applianceToDelete);
             await _unitOfWork.SaveChangesAsync();
-            return true;
         }
     }
-
 }

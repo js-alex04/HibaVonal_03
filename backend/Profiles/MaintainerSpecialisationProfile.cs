@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using HibaVonal_03.DTOs.MaintainerSpecialisation;
+using HibaVonal_03.DTOs;
 using HibaVonal_03.Entities;
 
 namespace HibaVonal_03.Profiles

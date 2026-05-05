@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace HibaVonal_03.DTOs.Auth
+namespace HibaVonal_03.DTOs
 {
-    public class LoginRequestDto
+    public class UserLoginRequestDto
     {
         [Required(ErrorMessage = "Az email cím megadása kötelező!")]
         [EmailAddress(ErrorMessage = "Érvénytelen email formátum!")]

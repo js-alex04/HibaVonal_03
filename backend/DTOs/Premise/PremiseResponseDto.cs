@@ -1,4 +1,4 @@
-﻿namespace HibaVonal_03.DTOs.Premise
+﻿namespace HibaVonal_03.DTOs
 {
     public class PremiseResponseDto
     {
