@@ -16,7 +16,7 @@ namespace HibaVonal_03.Profiles
             // 2. Szabály a Kollégistára (megkapja a saját DTO-ját, saját adataival)
             CreateMap<Collegiate, CollegiateResponseDto>()
                 .ForMember(dest => dest.ReportedFaultIds, opt => opt.MapFrom(src => src.ReportedFaults.Select(f => f.Id)))
-                .ForMember(dest => dest.FeedbackIds, opt => opt.MapFrom(src => src.Feedbacks.Select(fb => fb.Id)));
+                .ForMember(dest => dest.FeedbackIds, opt => opt.MapFrom(src => src.ReportedFaults.SelectMany(f => f.Feedbacks).Select(fb => fb.Id)));
 
             // 3. Szabály a Karbantartóra (ő is a saját DTO-ját kapja)
             CreateMap<Entities.Maintainer, MaintainerResponseDto>()

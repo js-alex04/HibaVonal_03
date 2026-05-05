@@ -46,7 +46,7 @@ namespace HibaVonal_03.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    PremiseId = table.Column<int>(type: "int", nullable: false)
+                    PremiseId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -55,8 +55,7 @@ namespace HibaVonal_03.Migrations
                         name: "FK_Appliances_Premises_PremiseId",
                         column: x => x.PremiseId,
                         principalTable: "Premises",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -162,8 +161,7 @@ namespace HibaVonal_03.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     FaultId = table.Column<int>(type: "int", nullable: false),
                     Date = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Text = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CollegiateId = table.Column<int>(type: "int", nullable: false)
+                    Text = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -174,12 +172,6 @@ namespace HibaVonal_03.Migrations
                         principalTable: "Faults",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Feedbacks_Users_CollegiateId",
-                        column: x => x.CollegiateId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -234,11 +226,6 @@ namespace HibaVonal_03.Migrations
                 name: "IX_Faults_SpecializationId",
                 table: "Faults",
                 column: "SpecializationId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Feedbacks_CollegiateId",
-                table: "Feedbacks",
-                column: "CollegiateId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Feedbacks_FaultId",

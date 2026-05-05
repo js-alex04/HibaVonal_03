@@ -61,13 +61,6 @@ namespace HibaVonal_03.Context
                 .HasForeignKey(f => f.PremiseId) // a kulcs a két tábla között
                 .OnDelete(DeleteBehavior.ClientSetNull); // ha egy helyiség törlésre kerül, a hozzá tartozó hibák nem törlődnek, de a PremiseId értéke null lesz (a korábbi hibák megőrzése érdekében)
 
-            // A Visszajelzés és a Kollégista közötti kapcsolat (egy-a-sokhoz)
-            modelBuilder.Entity<Feedback>()
-                .HasOne<Collegiate>(c => c.Collegiate) // egy visszajelzés egy konkrét kollégistához tartozik
-                .WithMany(c => c.Feedbacks) // egy kollégista több visszajelzést is adhat
-                .HasForeignKey(f => f.CollegiateId) // a kulcs a két tábla között
-                .OnDelete(DeleteBehavior.Restrict); // ha egy kollégista törlésre kerül, a hozzá tartozó visszajelzések nem törlődnek (a korábbi visszajelzések megőrzése érdekében)
-
             // A Visszajelzés és a Hiba közötti kapcsolat (egy-a-sokhoz)
             modelBuilder.Entity<Feedback>()
                 .HasOne<Fault>(fe => fe.Fault) // egy visszajelzés egy konkrét hibához tartozik

@@ -34,7 +34,7 @@ namespace HibaVonal_03.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("PremiseId")
+                    b.Property<int?>("PremiseId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -104,9 +104,6 @@ namespace HibaVonal_03.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("CollegiateId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
@@ -118,8 +115,6 @@ namespace HibaVonal_03.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CollegiateId");
 
                     b.HasIndex("FaultId");
 
@@ -284,9 +279,7 @@ namespace HibaVonal_03.Migrations
                 {
                     b.HasOne("HibaVonal_03.Entities.Premise", "Premise")
                         .WithMany("Appliances")
-                        .HasForeignKey("PremiseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("PremiseId");
 
                     b.Navigation("Premise");
                 });
@@ -329,19 +322,11 @@ namespace HibaVonal_03.Migrations
 
             modelBuilder.Entity("HibaVonal_03.Entities.Feedback", b =>
                 {
-                    b.HasOne("HibaVonal_03.Entities.Collegiate", "Collegiate")
-                        .WithMany("Feedbacks")
-                        .HasForeignKey("CollegiateId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("HibaVonal_03.Entities.Fault", "Fault")
                         .WithMany("Feedbacks")
                         .HasForeignKey("FaultId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Collegiate");
 
                     b.Navigation("Fault");
                 });
@@ -411,8 +396,6 @@ namespace HibaVonal_03.Migrations
 
             modelBuilder.Entity("HibaVonal_03.Entities.Collegiate", b =>
                 {
-                    b.Navigation("Feedbacks");
-
                     b.Navigation("ReportedFaults");
                 });
 
