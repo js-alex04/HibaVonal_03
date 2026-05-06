@@ -33,7 +33,7 @@ namespace HibaVonal_03.Services
 
             dto.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
-            var admin = _mapper.Map<User>(dto);
+            var admin = _mapper.Map<Administrator>(dto);
             admin.Role = Role.Administrator;
 
             await _unitOfWork.UserRepository.AddAsync(admin);
