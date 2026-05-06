@@ -26,7 +26,7 @@ namespace HibaVonal_03.Controllers.Appliance
             try
             {
                 var result = await _applianceService.CreateApplianceAsync(body);
-                return CreatedAtAction(nameof(GetApplianceById), new { id = result.Id }, result);
+                return CreatedAtAction(nameof(GetApplianceById), new { applianceId = result.Id }, result);
             }
             catch (KeyNotFoundException ex)
             {

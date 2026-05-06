@@ -27,7 +27,7 @@ namespace HibaVonal_03.Controllers.MaintainerSpecialisation
             try
             {
                 var result = await _maintainerSpecialisationService.CreateMaintainerSpecialisationAsync(body);
-                return CreatedAtAction(nameof(GetMaintainerSpecialisationById), new { id = result.Id }, result);
+                return CreatedAtAction(nameof(GetMaintainerSpecialisationById), new { maintainerSpecialisationId = result.Id }, result);
             }
             catch (InvalidOperationException ex)
             {

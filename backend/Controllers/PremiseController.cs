@@ -26,7 +26,7 @@ namespace HibaVonal_03.Controllers.Premise
             try
             {
                 var result = await _premiseService.CreatePremiseAsync(body);
-                return CreatedAtAction(nameof(GetPremiseById), new { id = result.Id }, result);
+                return CreatedAtAction(nameof(GetPremiseById), new { premiseId = result.Id }, result);
             }
             catch (InvalidOperationException ex)
             {

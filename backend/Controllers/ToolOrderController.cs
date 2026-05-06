@@ -28,7 +28,7 @@ namespace HibaVonal_03.Controllers.ToolOrder
             try
             {
                 var result = await _toolOrderService.CreateToolOrderAsync(faultId, body);
-                return CreatedAtAction(nameof(GetToolOrderById), new { id = result.Id }, result);
+                return CreatedAtAction(nameof(GetToolOrderById), new { toolOrderId = result.Id }, result);
             }
             catch (KeyNotFoundException ex)
             {
