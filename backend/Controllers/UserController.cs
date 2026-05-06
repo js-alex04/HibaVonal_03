@@ -63,7 +63,7 @@ namespace HibaVonal_03.Controllers
             try
             {
                 var result = await _userService.CreateCollegiateAsync(body);
-                return CreatedAtAction(nameof(GetUserById), new { id = result.Id }, result);
+                return CreatedAtAction(nameof(GetUserById), new { userId = result.Id }, result);
             }
             catch (InvalidOperationException ex)
             {
@@ -82,7 +82,7 @@ namespace HibaVonal_03.Controllers
             try
             {
                 var result = await _userService.CreateMaintainerAsync(body);
-                return CreatedAtAction(nameof(GetUserById), new { id = result.Id }, result);
+                return CreatedAtAction(nameof(GetUserById), new { userId = result.Id }, result);
             }
             catch (InvalidOperationException ex)
             {

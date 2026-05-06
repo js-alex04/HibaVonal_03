@@ -1,8 +1,11 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using AutoMapper.QueryableExtensions;
 using HibaVonal_03.DTOs;
 using HibaVonal_03.Entities;
 using HibaVonal_03.Interfaces;
 using HibaVonal_03.Repositories;
+using System.Linq;
 
 namespace HibaVonal_03.Services
 {
@@ -32,22 +35,21 @@ namespace HibaVonal_03.Services
         // Read
         public async Task<List<FaultResponseDto>> GetAllFaultsAsync()
         {
-            var faults = await _unitOfWork.FaultRepository.GetAsync(null, "Feedbacks,Collegiate,AssignedMaintenance,Appliance,Premise,ToolOrders");
-
-            return _mapper.Map<List<FaultResponseDto>>(faults);
+            return await _unitOfWork.FaultRepository.GetQueryable()
+                .ProjectTo<FaultResponseDto>(_mapper.ConfigurationProvider)
+                .ToListAsync();
         }
 
         // Read by ID
         public async Task<FaultResponseDto> GetFaultByIdAsync(int faultId)
         {
-            // Szűrés a FaultId alapján, és a kapcsolódó entitások betöltése a DTO számára
-            var fault = await _unitOfWork.FaultRepository.GetByIdAsync(
-                faultId,
-                "Feedbacks,Collegiate,AssignedMaintenance,Appliance,Premise,ToolOrders"
-            )
-            ?? throw new KeyNotFoundException($"A hiba a megadott azonosítóval ({faultId}) nem található.");
+            var faultDto = await _unitOfWork.FaultRepository.GetQueryable()
+                .Where(f => f.Id == faultId)
+                .ProjectTo<FaultResponseDto>(_mapper.ConfigurationProvider)
+                .SingleOrDefaultAsync()
+                ?? throw new KeyNotFoundException($"A hiba a megadott azonosítóval ({faultId}) nem található.");
 
-            return _mapper.Map<FaultResponseDto>(fault);
+            return faultDto;
         }
 
         public async Task<List<FaultResponseDto>> GetFaultsByCollegiateIdAsync(int collegiateId)
@@ -55,13 +57,10 @@ namespace HibaVonal_03.Services
             if ((await _unitOfWork.UserRepository.GetByIdAsync(collegiateId)) is null)
                 throw new KeyNotFoundException($"A kollégista a megadott azonosítóval ({collegiateId}) nem található.");
 
-            // Szűrés a CollegiateId alapján, és a kapcsolódó entitások betöltése a DTO számára
-            var faults = await _unitOfWork.FaultRepository.GetAsync(
-                filter: f => f.CollegiateId == collegiateId,
-                includeProperties: "Feedbacks,Collegiate,AssignedMaintenance,Appliance,Premise,ToolOrders"
-            );
-
-            return _mapper.Map<List<FaultResponseDto>>(faults);
+            return await _unitOfWork.FaultRepository.GetQueryable()
+                .Where(f => f.CollegiateId == collegiateId)
+                .ProjectTo<FaultResponseDto>(_mapper.ConfigurationProvider)
+                .ToListAsync();
         }
 
         public async Task<List<FaultResponseDto>> GetFaultsByMaintainerIdAsync(int maintainerId)
@@ -81,13 +80,10 @@ namespace HibaVonal_03.Services
 
         public async Task<List<FaultResponseDto>> GetFaultsByStatusAsync(FaultStatus faultStatus)
         {
-            var faults = await _unitOfWork.FaultRepository.GetAsync(
-                null,
-                "Collegiate,Premise,Appliance,Specialization,AssignedMaintenance"
-            );
-            var faultsByStatus = faults.Where(fault => fault.Status == faultStatus);
-
-            return _mapper.Map<List<FaultResponseDto>>(faultsByStatus);
+            return await _unitOfWork.FaultRepository.GetQueryable()
+                .Where(f => f.Status == faultStatus)
+                .ProjectTo<FaultResponseDto>(_mapper.ConfigurationProvider)
+                .ToListAsync();
         }
 
         //Update

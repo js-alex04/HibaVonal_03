@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using AutoMapper.QueryableExtensions;
 using HibaVonal_03.DTOs;
 using HibaVonal_03.Entities;
 using HibaVonal_03.Interfaces;
@@ -44,22 +46,21 @@ namespace HibaVonal_03.Services
         // Read
         public async Task<List<MaintainerSpecialisationResponseDto>> GetAllMaintainerSpecialisationsAsync()
         {
-            // 1. lépés: Lekérjük az összes szakterületet az adatbázisból
-            var allSpecialisations = await _unitOfWork.MaintainerSpecialisationRepository.GetAllAsync();
-
-            // 2. lépés: Visszaadjuk a szakterületeket DTO formában
-            return _mapper.Map<List<MaintainerSpecialisationResponseDto>>(allSpecialisations);
+            return await _unitOfWork.MaintainerSpecialisationRepository.GetQueryable()
+                .ProjectTo<MaintainerSpecialisationResponseDto>(_mapper.ConfigurationProvider)
+                .ToListAsync();
         }
 
         // Read by ID
         public async Task<MaintainerSpecialisationResponseDto> GetMaintainerSpecialisationByIdAsync(int maintainerSpecialisationId)
         {
-            // 1. lépés: Lekérjük a szakterületet az adatbázisból az ID alapján
-            var specialisationById = await _unitOfWork.MaintainerSpecialisationRepository.GetByIdAsync(maintainerSpecialisationId)
+            var specialisationDto = await _unitOfWork.MaintainerSpecialisationRepository.GetQueryable()
+                .Where(ms => ms.Id == maintainerSpecialisationId)
+                .ProjectTo<MaintainerSpecialisationResponseDto>(_mapper.ConfigurationProvider)
+                .SingleOrDefaultAsync()
                 ?? throw new KeyNotFoundException($"A karbantartói szakterület a megadott azonosítóval ({maintainerSpecialisationId}) nem található.");
 
-            // 2. lépés: Visszaadjuk a szakterületet DTO formában
-            return _mapper.Map<MaintainerSpecialisationResponseDto>(specialisationById);
+            return specialisationDto;
         }
 
         public async Task<List<MaintainerSpecialisationResponseDto>> GetSpecialisationsByMaintainerIdAsync(int maintainerId)
@@ -67,11 +68,10 @@ namespace HibaVonal_03.Services
             var maintainer = await _unitOfWork.MaintainerRepository.GetByIdAsync(maintainerId)
                 ?? throw new KeyNotFoundException($"A karbantartó a megadott azonosítóval ({maintainerId}) nem található.");
 
-            var specialisations = await _unitOfWork.MaintainerSpecialisationRepository.GetAsync(
-                s => s.Maintainers.Any(m => m.Id == maintainerId));
-
-            // DTO listává alakítjuk és visszaadjuk
-            return _mapper.Map<List<MaintainerSpecialisationResponseDto>>(specialisations);
+            return await _unitOfWork.MaintainerSpecialisationRepository.GetQueryable()
+                .Where(s => s.Maintainers.Any(m => m.Id == maintainerId))
+                .ProjectTo<MaintainerSpecialisationResponseDto>(_mapper.ConfigurationProvider)
+                .ToListAsync();
         }
 
         // Update

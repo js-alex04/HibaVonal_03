@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using AutoMapper.QueryableExtensions;
 using HibaVonal_03.DTOs;
 using HibaVonal_03.Interfaces;
 using HibaVonal_03.Repositories;
@@ -41,42 +43,41 @@ namespace HibaVonal_03.Services
         //Read
         public async Task<List<ToolOrderResponseDto>> GetAllToolOrdersAsync()
         {
-            // 1. lépés: Lekérjük az összes rendelést az adatbázisból
-            var allOrders = await _unitOfWork.ToolOrderRepository.GetAllAsync();
-
-            // 2. lépés: Visszamappeljük a rendeléseket egy listára a response DTO-kból
-            return _mapper.Map<List<ToolOrderResponseDto>>(allOrders);
+            return await _unitOfWork.ToolOrderRepository.GetQueryable()
+                .ProjectTo<ToolOrderResponseDto>(_mapper.ConfigurationProvider)
+                .ToListAsync();
         }
 
         public async Task<ToolOrderResponseDto> GetToolOrderByIdAsync(int toolOrderId)
         {
-            // 1. lépés: Lekérjük a rendelést az adatbázisból az ID alapján
-            var orderById = await _unitOfWork.ToolOrderRepository.GetByIdAsync(toolOrderId)
+            var orderDto = await _unitOfWork.ToolOrderRepository.GetQueryable()
+                .Where(o => o.Id == toolOrderId)
+                .ProjectTo<ToolOrderResponseDto>(_mapper.ConfigurationProvider)
+                .SingleOrDefaultAsync()
                 ?? throw new KeyNotFoundException($"Az eszközrendelés a megadott azonosítóval ({toolOrderId}) nem található.");
 
-            // 2. lépés: Visszamappeljük a rendelést egy response DTO-ra
-            return _mapper.Map<ToolOrderResponseDto>(orderById);
+            return orderDto;
         }
 
         // Egy adott hiba alapján lekérdezzük a hozzá tartozó rendeléseket
         public async Task<List<ToolOrderResponseDto>> GetToolOrdersByFaultIdAsync(int faultId)
         {
-            // 1. lépés: Lekérjük a megadott hibát
-            var existingFault = await _unitOfWork.FaultRepository.GetByIdAsync(faultId)
-                ?? throw new KeyNotFoundException($"A hiba a megadott azonosítóval ({faultId}) nem található.");
+            if (await _unitOfWork.FaultRepository.GetByIdAsync(faultId) == null)
+                throw new KeyNotFoundException($"A hiba a megadott azonosítóval ({faultId}) nem található.");
 
-            var ordersByFaultId = await _unitOfWork.ToolOrderRepository.GetAsync(order => order.FaultId == faultId);
-
-            // 2. lépés: Visszamappeljük a rendeléseket egy listára a response DTO-kból
-            return _mapper.Map<List<ToolOrderResponseDto>>(ordersByFaultId);
+            return await _unitOfWork.ToolOrderRepository.GetQueryable()
+                .Where(order => order.FaultId == faultId)
+                .ProjectTo<ToolOrderResponseDto>(_mapper.ConfigurationProvider)
+                .ToListAsync();
         }
 
         // Minden olyan rendelés lekérdezése, amely még nem került kiszállításra
         public async Task<List<ToolOrderResponseDto>> GetPendingToolOrdersAsync()
         {
-            var pendingOrders = await _unitOfWork.ToolOrderRepository.GetAsync(order => !order.IsDelivered);
-
-            return _mapper.Map<List<ToolOrderResponseDto>>(pendingOrders);
+            return await _unitOfWork.ToolOrderRepository.GetQueryable()
+                .Where(order => !order.IsDelivered)
+                .ProjectTo<ToolOrderResponseDto>(_mapper.ConfigurationProvider)
+                .ToListAsync();
         }
 
         //Update

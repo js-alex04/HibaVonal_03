@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using AutoMapper.QueryableExtensions;
 using HibaVonal_03.DTOs;
 using HibaVonal_03.Interfaces;
 using HibaVonal_03.Repositories;
@@ -36,22 +38,21 @@ namespace HibaVonal_03.Services
         // Read
         public async Task<List<ApplianceResponseDto>> GetAllAppliancesAsync()
         {
-            // 1. lépés: Lekérjük az összes berendezést az adatbázisból
-            var allAppliances = await _unitOfWork.ApplianceRepository.GetAllAsync(includeProperties: "Premise");
-
-            // 2. lépés: Leképezzük az entitásokat DTO-kra és visszaadjuk a listát
-            return _mapper.Map<List<ApplianceResponseDto>>(allAppliances);
+            return await _unitOfWork.ApplianceRepository.GetQueryable()
+                .ProjectTo<ApplianceResponseDto>(_mapper.ConfigurationProvider)
+                .ToListAsync();
         }
 
         // Read by ID
         public async Task<ApplianceResponseDto> GetApplianceByIdAsync(int applianceId)
         {
-            // 1. lépés: Lekérjük a berendezést az adatbázisból az ID alapján
-            var applianceById = await _unitOfWork.ApplianceRepository.GetByIdAsync(applianceId, includeProperties: "Premise")
+            var applianceDto = await _unitOfWork.ApplianceRepository.GetQueryable()
+                .Where(a => a.Id == applianceId)
+                .ProjectTo<ApplianceResponseDto>(_mapper.ConfigurationProvider)
+                .SingleOrDefaultAsync() 
                 ?? throw new KeyNotFoundException($"A berendezés a megadott azonosítóval ({applianceId}) nem létezik.");
 
-            // 2. lépés: Leképezzük az entitást DTO-ra és visszaadjuk
-            return _mapper.Map<ApplianceResponseDto>(applianceById);
+            return applianceDto;
         }
 
         // Update

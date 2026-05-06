@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using AutoMapper.QueryableExtensions;
 using HibaVonal_03.DTOs;
 using HibaVonal_03.Entities;
 using HibaVonal_03.Interfaces;
@@ -19,27 +21,28 @@ namespace HibaVonal_03.Services
 
         public async Task<List<MaintainerResponseDto>> GetAllMaintainersAsync()
         {
-            var maintainers = await _unitOfWork.MaintainerRepository.GetAsync(null, "MaintenanceSpecialisation");
-
-            return _mapper.Map<List<MaintainerResponseDto>>(maintainers);
+            return await _unitOfWork.MaintainerRepository.GetQueryable()
+                .ProjectTo<MaintainerResponseDto>(_mapper.ConfigurationProvider)
+                .ToListAsync();
         }
 
         public async Task<MaintainerResponseDto> GetMaintainerByIdAsync(int maintainerId)
         {
-            var maintainer = await _unitOfWork.MaintainerRepository.GetByIdAsync(maintainerId, "MaintenanceSpecialisation")
+            var maintainerDto = await _unitOfWork.MaintainerRepository.GetQueryable()
+                .Where(m => m.Id == maintainerId)
+                .ProjectTo<MaintainerResponseDto>(_mapper.ConfigurationProvider)
+                .SingleOrDefaultAsync()
                 ?? throw new KeyNotFoundException($"A karbantartó a megadott azonosítóval ({maintainerId}) nem található.");
 
-            return _mapper.Map<MaintainerResponseDto>(maintainer);
+            return maintainerDto;
         }
 
         public async Task<List<MaintainerResponseDto>> GetMaintainersBySpecialisationIdAsync(int specialisationId)
         {
-            var maintainers = await _unitOfWork.MaintainerRepository.GetAsync(
-                m => m.MaintenanceSpecialisation.Any(s => s.Id == specialisationId),
-                "MaintenanceSpecialisation"
-            );
-
-            return _mapper.Map<List<MaintainerResponseDto>>(maintainers);
+            return await _unitOfWork.MaintainerRepository.GetQueryable()
+                .Where(m => m.MaintenanceSpecialisation.Any(s => s.Id == specialisationId))
+                .ProjectTo<MaintainerResponseDto>(_mapper.ConfigurationProvider)
+                .ToListAsync();
         }
 
         public async Task<MaintainerResponseDto> UpdateAvailabilityAsync(int maintainerId, bool isAvailable)
@@ -51,6 +54,8 @@ namespace HibaVonal_03.Services
                 throw new InvalidOperationException($"A karbantartó elérhetősége már {(isAvailable ? "elérhető" : "nem elérhető")} állapotban van.");
 
             maintainer.IsAvailable = isAvailable;
+
+            _unitOfWork.MaintainerRepository.Update(maintainer);
 
             await _unitOfWork.SaveChangesAsync();
 

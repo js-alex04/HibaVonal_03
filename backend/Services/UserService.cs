@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using AutoMapper.QueryableExtensions;
 using BCrypt.Net;
 using HibaVonal_03.DTOs;
 using HibaVonal_03.Entities;
@@ -115,25 +117,24 @@ namespace HibaVonal_03.Services
 
         public async Task<List<UserResponseDto>> GetAllUsersAsync()
         {
-            var users = await _unitOfWork.UserRepository.GetAsync(null, 
-                "MaintenanceSpecialisation,DormRoom,ReportedFaults,Feedbacks");
-
-            return _mapper.Map<List<UserResponseDto>>(users);
+            return await _unitOfWork.UserRepository.GetQueryable().ProjectTo<UserResponseDto>(_mapper.ConfigurationProvider).ToListAsync();
         }
 
         public async Task<UserResponseDto> GetUserByIdAsync(int userId)
         {
-            var user = await _unitOfWork.UserRepository.GetByIdAsync(userId,
-                "MaintenanceSpecialisation,DormRoom,ReportedFaults,Feedbacks")
+            var userDto = await _unitOfWork.UserRepository.GetQueryable()
+                .Where(u => u.Id == userId)
+                .ProjectTo<UserResponseDto>(_mapper.ConfigurationProvider)
+                .SingleOrDefaultAsync()
                 ?? throw new KeyNotFoundException($"A felhasználó a megadott azonosítóval ({userId}) nem található.");
 
-            return _mapper.Map<UserResponseDto>(user);
+            return userDto;
         }
 
         public async Task<UserLoginResponseDto> LoginAsync(UserLoginRequestDto request)
         {
-            var user = (await _unitOfWork.UserRepository.GetAsync(
-                u => u.Email == request.Email)).FirstOrDefault()
+            var user = await _unitOfWork.UserRepository.GetQueryable()
+                .SingleOrDefaultAsync(u => u.Email == request.Email)
                 ?? throw new InvalidOperationException("Érvénytelen email cím vagy jelszó.");
 
             if (!BCrypt.Net.BCrypt.Verify(request.Password, user.Password))

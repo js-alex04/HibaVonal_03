@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using AutoMapper.QueryableExtensions;
 using HibaVonal_03.DTOs;
 using HibaVonal_03.Interfaces;
 using HibaVonal_03.Repositories;
@@ -19,18 +21,20 @@ namespace HibaVonal_03.Services
         // Read
         public async Task<List<FeedbackResponseDto>> GetAllFeedbacksAsync()
         {
-            var feedbacks = await _unitOfWork.FeedbackRepository.GetAsync(null, "Collegiate");
-
-            return _mapper.Map<List<FeedbackResponseDto>>(feedbacks);
+            return await _unitOfWork.FeedbackRepository.GetQueryable()
+                .ProjectTo<FeedbackResponseDto>(_mapper.ConfigurationProvider)
+                .ToListAsync();
         }
 
         // Read by ID
         public async Task<FeedbackResponseDto?> GetFeedbackByIdAsync(int feedbackId)
         {
-            var feedback = await _unitOfWork.FeedbackRepository.GetByIdAsync(feedbackId, "Collegiate")
-                ?? throw new KeyNotFoundException($"A visszajelzés a megadott azonosítóval ({feedbackId}) nem található.");
+            var feedbackDto = await _unitOfWork.FeedbackRepository.GetQueryable()
+                .Where(f => f.Id == feedbackId)
+                .ProjectTo<FeedbackResponseDto>(_mapper.ConfigurationProvider)
+                .SingleOrDefaultAsync() ?? throw new KeyNotFoundException($"A visszajelzés a megadott azonosítóval ({feedbackId}) nem található.");
 
-            return _mapper.Map<FeedbackResponseDto>(feedback);
+            return feedbackDto;
         }
 
         // Update
@@ -40,7 +44,9 @@ namespace HibaVonal_03.Services
                 ?? throw new KeyNotFoundException($"A visszajelzés a megadott azonosítóval ({feedbackId}) nem található.");
 
             _mapper.Map(feedback, existingFeedback);
-            
+
+            _unitOfWork.FeedbackRepository.Update(existingFeedback);
+
             await _unitOfWork.SaveChangesAsync();
 
             return _mapper.Map<FeedbackResponseDto>(existingFeedback);

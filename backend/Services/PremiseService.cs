@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using AutoMapper.QueryableExtensions;
 using HibaVonal_03.DTOs;
 using HibaVonal_03.Entities;
 using HibaVonal_03.Interfaces;
@@ -43,22 +45,21 @@ namespace HibaVonal_03.Services
         // Read
         public async Task<List<PremiseResponseDto>> GetAllPremisesAsync()
         {
-            // 1. lépés: Lekérjük az összes helyiséget az adatbázisból
-            var allPremises = _unitOfWork.PremiseRepository.GetAllAsync();
-
-            // 2. lépés: Mappeljük az entitásokat a response DTO-kra
-            return _mapper.Map<List<PremiseResponseDto>>(await allPremises);
+            return await _unitOfWork.PremiseRepository.GetQueryable()
+                .ProjectTo<PremiseResponseDto>(_mapper.ConfigurationProvider)
+                .ToListAsync();
         }
 
         // Read by ID
         public async Task<PremiseResponseDto> GetPremiseByIdAsync(int premiseId)
         {
-            // 1. lépés: Lekérjük a premise-t az adatbázisból az ID alapján
-            var premiseById = _unitOfWork.PremiseRepository.GetByIdAsync(premiseId)
-                ?? throw new KeyNotFoundException($"A helyiség a megadott azonosítóval ({premiseId}) nem található.");    
+            var premiseDto = await _unitOfWork.PremiseRepository.GetQueryable()
+                .Where(p => p.Id == premiseId)
+                .ProjectTo<PremiseResponseDto>(_mapper.ConfigurationProvider)
+                .SingleOrDefaultAsync()
+                ?? throw new KeyNotFoundException($"A helyiség a megadott azonosítóval ({premiseId}) nem található.");
 
-            // 2. lépés: Mappeljük az entitást a response DTO-ra
-            return _mapper.Map<PremiseResponseDto>(await premiseById);
+            return premiseDto;
         }
 
         // Update
@@ -106,7 +107,7 @@ namespace HibaVonal_03.Services
 
             await _unitOfWork.SaveChangesAsync();
 
-            return _mapper.Map<PremiseResponseDto>(existingPremise);
+            return await GetPremiseByIdAsync(premiseId);
         }
 
         public async Task DeleteApplianceFromPremiseAsync(int premiseId, int applianceId)
