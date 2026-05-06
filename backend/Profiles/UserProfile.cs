@@ -29,6 +29,7 @@ namespace HibaVonal_03.Profiles
             CreateMap<CollegiateCreateDto, Collegiate>();
             CreateMap<MaintainerCreateDto, Maintainer>();
             CreateMap<UserCreateDto, User>();
+            CreateMap<User, UserLoginResponseDto>();
         }
     }
 }

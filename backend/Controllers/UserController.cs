@@ -145,7 +145,6 @@ namespace HibaVonal_03.Controllers
             {
                 return BadRequest(ex.Message);
             }
-            
         }
 
         [HttpPut("{userId}/profile")]

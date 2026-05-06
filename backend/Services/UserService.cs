@@ -29,9 +29,10 @@ namespace HibaVonal_03.Services
             var existingUsers = await _unitOfWork.UserRepository.GetAsync(u => u.Email == dto.Email);
             if (existingUsers.Any()) throw new InvalidOperationException("Ez az email cím már foglalt!");
 
+            dto.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+
             var admin = _mapper.Map<User>(dto);
             admin.Role = Role.Administrator;
-            admin.Password = dto.Password;
 
             await _unitOfWork.UserRepository.AddAsync(admin);
             await _unitOfWork.SaveChangesAsync();
@@ -44,9 +45,10 @@ namespace HibaVonal_03.Services
             var existingUsers = await _unitOfWork.UserRepository.GetAsync(filter: u => u.Email == dto.Email);
             if (existingUsers.Any()) throw new InvalidOperationException("Ez az email cím már foglalt!");
 
+            dto.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+
             var manager = _mapper.Map<User>(dto);
             manager.Role = Role.MaintenanceManager;
-            manager.Password = dto.Password;
 
             await _unitOfWork.UserRepository.AddAsync(manager);
             await _unitOfWork.SaveChangesAsync();
@@ -84,9 +86,10 @@ namespace HibaVonal_03.Services
             var existingUsers = await _unitOfWork.UserRepository.GetAsync(filter: u => u.Email == dto.Email);
             if (existingUsers.Any()) throw new InvalidOperationException("Ez az email cím már foglalt!");
 
+            dto.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+
             var maintainer = _mapper.Map<Entities.Maintainer>(dto);
             maintainer.Role = Role.Maintainer;
-            maintainer.Password = dto.Password;
             maintainer.IsAvailable = true;
 
             if (dto.SpecialisationIds != null && dto.SpecialisationIds.Any())
@@ -127,7 +130,7 @@ namespace HibaVonal_03.Services
             return _mapper.Map<UserResponseDto>(user);
         }
 
-        public async Task<UserResponseDto> LoginAsync(UserLoginRequestDto request)
+        public async Task<UserLoginResponseDto> LoginAsync(UserLoginRequestDto request)
         {
             var user = (await _unitOfWork.UserRepository.GetAsync(
                 u => u.Email == request.Email)).FirstOrDefault()
@@ -159,8 +162,8 @@ namespace HibaVonal_03.Services
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
 
-            var response = _mapper.Map<UserResponseDto>(user);
-            // Hozzáadjuk a token string-et a DTO-hoz (ne felejtsd el beletenni a Token property-t a UserResponseDto-ba!)
+            var response = _mapper.Map<UserLoginResponseDto>(user);
+
             response.Token = tokenHandler.WriteToken(token);
 
             return response;
@@ -185,10 +188,10 @@ namespace HibaVonal_03.Services
             var user = await _unitOfWork.UserRepository.GetByIdAsync(userId)
                 ?? throw new KeyNotFoundException($"A felhasználó a megadott azonosítóval ({userId}) nem található.");
 
-            if (user.Password != dto.CurrentPassword)
-                throw new InvalidOperationException("The current password is incorrect.");
+            if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, user.Password))
+                throw new InvalidOperationException("A jelenlegi jelszó helytelen.");
 
-            user.Password = dto.NewPassword;
+            user.Password = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
 
             _unitOfWork.UserRepository.Update(user);
             await _unitOfWork.SaveChangesAsync();

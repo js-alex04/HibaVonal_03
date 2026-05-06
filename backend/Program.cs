@@ -1,6 +1,4 @@
 using AutoMapper;
-using Microsoft.OpenApi;
-using Microsoft.Extensions.DependencyInjection;
 using HibaVonal_03.Context;
 using HibaVonal_03.DTOs;
 using HibaVonal_03.Interfaces;
@@ -9,7 +7,9 @@ using HibaVonal_03.Repositories;
 using HibaVonal_03.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
@@ -22,12 +22,32 @@ namespace HibaVonal_03
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // 1. JWT beállítások beolvasása az appsettings.json-ből
+            // JWT és adatbázis beállítások beolvasása
             var jwtSettings = builder.Configuration.GetSection("JwtSettings");
             var secretKey = Encoding.ASCII.GetBytes(jwtSettings["Secret"]!);
 
-            // Add services to the container.
+            builder.Services.AddDbContext<HibaVonalDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+            // Alapvető szolgáltatások (Mapper, DB) regisztrálása
+            builder.Services.AddAutoMapper(config =>
+            {
+                config.AddMaps(typeof(Program).Assembly);
+            });
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+            builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+
+            // Üzleti logika (Services) regisztrálása
+            builder.Services.AddScoped<IApplianceService, ApplianceService>();
+            builder.Services.AddScoped<IFaultService, FaultService>();
+            builder.Services.AddScoped<IFeedbackService, FeedbackService>();
+            builder.Services.AddScoped<IMaintainerService, MaintainerService>();
+            builder.Services.AddScoped<IMaintainerSpecialisationService, MaintainerSpecialisationService>();
+            builder.Services.AddScoped<IPremiseService, PremiseService>();
+            builder.Services.AddScoped<IToolOrderService, ToolOrderService>();
+            builder.Services.AddScoped<IUserService, UserService>();
+
+            // Controllerek és JSON szerializációs szabályok
             builder.Services.AddControllers().AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
@@ -36,42 +56,48 @@ namespace HibaVonal_03
                 options.JsonSerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver
                 {
                     Modifiers =
-        {
-            typeInfo =>
-            {
-                // Csak a UserResponseDto-ra és az abból származókra (Collegiate, Maintainer) alkalmazzuk
-                if (typeInfo.Type == typeof(UserResponseDto) || typeInfo.Type.IsSubclassOf(typeof(UserResponseDto)))
-                {
-                    // 1. ELTÜNTETJÜK a polimorfizmust (ezzel kinyírjuk a $type mezőt)
-                    typeInfo.PolymorphismOptions = null;
-
-                    // 2. SORBA RENDEZZÜK a mezőket
-                    // Kimentjük a meglévő mezőket, majd töröljük a listát
-                    var props = typeInfo.Properties.ToList();
-                    typeInfo.Properties.Clear();
-
-                    // Definiálunk egy prioritási sorrendet (kisebb szám = előrébb kerül)
-                    int GetOrder(string name) => name.ToLower() switch
                     {
-                        "id" => 1,
-                        "name" => 2,
-                        "email" => 3,
-                        "role" => 4,
-                        _ => 10 // Minden más (extra mezők) a végére kerül
-                    };
+                        typeInfo =>
+                        {
+                            if (typeInfo.Type == typeof(UserResponseDto) || typeInfo.Type.IsSubclassOf(typeof(UserResponseDto)))
+                            {
+                                typeInfo.PolymorphismOptions = null;
 
-                    // Visszatöltjük a mezőket a megadott sorrendben
-                    foreach (var prop in props.OrderBy(p => GetOrder(p.Name)))
-                    {
-                        typeInfo.Properties.Add(prop);
+                                var props = typeInfo.Properties.ToList();
+                                typeInfo.Properties.Clear();
+
+                                int GetOrder(string name) => name.ToLower() switch
+                                {
+                                    "id" => 1,
+                                    "name" => 2,
+                                    "email" => 3,
+                                    "role" => 4,
+                                    _ => 10
+                                };
+
+                                foreach (var prop in props.OrderBy(p => GetOrder(p.Name)))
+                                {
+                                    typeInfo.Properties.Add(prop);
+                                }
+                            }
+                        }
                     }
-                }
-            }
-        }
                 };
             });
 
-            // 2. Authentication (Hitelesítés) szolgáltatás regisztrálása
+            // CORS beállítás a React frontendhez
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowReactApp", policy =>
+                {
+                    policy.WithOrigins("http://localhost:3000")
+                          .AllowAnyHeader()
+                          .AllowAnyMethod()
+                          .AllowCredentials();
+                });
+            });
+
+            // Hitelesítés (JWT) konfigurálása
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -79,7 +105,7 @@ namespace HibaVonal_03
             })
             .AddJwtBearer(options =>
             {
-                options.RequireHttpsMetadata = false; // Fejlesztésnél lehet false
+                options.RequireHttpsMetadata = false;
                 options.SaveToken = true;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
@@ -90,79 +116,49 @@ namespace HibaVonal_03
                     ValidateAudience = true,
                     ValidAudience = jwtSettings["Audience"],
                     ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero // Ne adjon extra időt a lejárathoz
+                    ClockSkew = TimeSpan.Zero
                 };
             });
 
-            builder.Services.AddEndpointsApiExplorer(); // Ez segít a Swaggernek feltérképezni a végpontokat
-            builder.Services.AddSwaggerGen();
-
-            // React frontend build folder configuration
-            builder.Services.AddCors(options =>
+            // Swagger konfigurálása a JWT támogatással
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(c =>
             {
-                options.AddPolicy("AllowReactApp", policy =>
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
-                    policy.WithOrigins("http://localhost:3000") // frontend's port
-                          .AllowAnyHeader()
-                          .AllowAnyMethod()
-                          .AllowCredentials();
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "Másold be a JWT tokent ide."
                 });
-            });
 
-            builder.Services.AddDbContext<HibaVonalDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))); // Use SQL Server as the database provider, with the connection string from appsettings.
-
-            // regisztráljuk az ApplianceService-t (IApplianceService és ApplianceService) a dependency injection konténerbe
-            builder.Services.AddScoped<IApplianceService, ApplianceService>();
-
-            // regisztráljuk a FaultService-t (IFaultService és FaultService) a dependency injection konténerbe
-            builder.Services.AddScoped<IFaultService, FaultService>();
-
-            // regisztráljuk a FeedbackService-t (IFeedbackService és FeedbackService) a dependency injection konténerbe
-            builder.Services.AddScoped<IFeedbackService, FeedbackService>();
-
-            // regisztráljuk a MaintainerService-t (IMaintainerService és MaintainerService) a dependency injection konténerbe
-            builder.Services.AddScoped<IMaintainerService, MaintainerService>();
-
-            // regisztráljuk a MaintainerSpecialisationService-t (IMaintainerSpecialisationService és MaintainerSpecialisationService) a dependency injection konténerbe
-            builder.Services.AddScoped<IMaintainerSpecialisationService, MaintainerSpecialisationService>();
-
-            // regisztráljuk a PremiseService-t (IPremiseService és PremiseService) a dependency injection konténerbe
-            builder.Services.AddScoped<IPremiseService, PremiseService>();
-
-            // regisztráljuk a ToolOrderService-t (IToolOrderService és ToolOrderService) a dependency injection konténerbe
-            builder.Services.AddScoped<IToolOrderService, ToolOrderService>();
-
-            // regisztráljuk a UserService-t (IUserService és UserService) a dependency injection konténerbe
-            builder.Services.AddScoped<IUserService, UserService>();
-
-            // regisztráljuk a generikus repository-t (IRepository<T> és Repository<T>) a dependency injection konténerbe
-            builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-
-            // regisztráljuk a UnitOfWork-t (IUnitOfWork és UnitOfWork) a dependency injection konténerbe
-            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-            //Mapper registration
-            builder.Services.AddAutoMapper(config =>
-            {
-                config.AddMaps(typeof(Program).Assembly);
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        new List<string>()
+                    }
+                });
             });
 
             var app = builder.Build();
 
-            
-
-            
-
-            //AI által generált kód: Adatbázis feltöltése (seeding) a program indításakor
+            // Adatbázis inicializálása (Seeding)
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
                 try
                 {
-                    // Lekérjük az adatbázis kontextust
                     var context = services.GetRequiredService<HibaVonalDbContext>();
-                    // Lefuttatjuk a feltöltést
                     HibaVonal_03.Data.DbInitializer.Initialize(context);
                 }
                 catch (Exception ex)
@@ -172,22 +168,17 @@ namespace HibaVonal_03
                 }
             }
 
-            // Configure the HTTP request pipeline.
+            // HTTP Request Pipeline (Middleware-ek) beállítása
             if (app.Environment.IsDevelopment())
             {
-                app.UseSwagger();   // Létrehozza a JSON fájlt
-                app.UseSwaggerUI(); // Létrehozza a gyönyörű grafikus weboldalt
+                app.UseSwagger();
+                app.UseSwaggerUI();
             }
 
             app.UseHttpsRedirection();
-
-            // Enable CORS for the React frontend
             app.UseCors("AllowReactApp");
-
-            app.UseAuthentication(); // 1. Hitelesítés
-
-            app.UseAuthorization();  // 2. Jogosultság
-
+            app.UseAuthentication();
+            app.UseAuthorization();
             app.MapControllers();
 
             app.Run();

@@ -11,7 +11,7 @@ namespace HibaVonal_03.Interfaces
         Task<UserResponseDto> CreateMaintainerAsync(MaintainerCreateDto dto); // karbantartó
         Task<List<UserResponseDto>> GetAllUsersAsync();
         Task<UserResponseDto> GetUserByIdAsync(int userId);
-        Task<UserResponseDto> LoginAsync(UserLoginRequestDto request);
+        Task<UserLoginResponseDto> LoginAsync(UserLoginRequestDto request);
         Task<UserResponseDto> UpdateUserProfileAsync(int userId, UserUpdateDto dto); // Alap adatok (Név, Email)
         Task ChangePasswordAsync(int userId, ChangePasswordDto dto); // Jelszó csere
         Task ChangeUserRoleAsync(int userId, Role newRole); // Adminisztrátori jogkör módosítás
