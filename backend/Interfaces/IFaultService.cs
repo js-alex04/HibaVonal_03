@@ -7,7 +7,6 @@ namespace HibaVonal_03.Interfaces
     {
         Task<FaultResponseDto> CreateFaultAsync(FaultCreateDto fault, int collegiateId); // Hibajegy beküldése
         Task<List<FaultResponseDto>> GetAllFaultsAsync();
-        Task<FaultResponseDto> GetFaultByIdAsync(int faultId);
         Task<List<FaultResponseDto>> GetFaultsByCollegiateIdAsync(int collegiateId); // Diák saját hibái
         Task<List<FaultResponseDto>> GetFaultsByMaintainerIdAsync(int maintainerId);  // Karbantartó feladatai
         Task<List<FaultResponseDto>> GetFaultsByStatusAsync(FaultStatus faultStatus);      // Szűrés státusz szerint

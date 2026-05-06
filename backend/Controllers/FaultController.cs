@@ -64,25 +64,6 @@ namespace HibaVonal_03.Controllers.Fault
             }
         }
 
-        [HttpGet("{faultId}")]
-        [Authorize(Roles = "MaintenanceManager,Administrator")]
-        public async Task<ActionResult> GetFaultById(int faultId)
-        {
-            try
-            {
-                var result = await _faultService.GetFaultByIdAsync(faultId);
-                return Ok(result);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
-
         [HttpGet("{collegiateId}")]
         [Authorize(Roles = "Collegiate,MaintenanceManager,Administrator")]
         public async Task<ActionResult> GetFaultsByCollegiateId(int collegiateId)

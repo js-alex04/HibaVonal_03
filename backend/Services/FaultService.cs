@@ -45,18 +45,6 @@ namespace HibaVonal_03.Services
                 .ToListAsync();
         }
 
-        // Read by ID
-        public async Task<FaultResponseDto> GetFaultByIdAsync(int faultId)
-        {
-            var faultDto = await _unitOfWork.FaultRepository.GetQueryable()
-                .Where(f => f.Id == faultId)
-                .ProjectTo<FaultResponseDto>(_mapper.ConfigurationProvider)
-                .SingleOrDefaultAsync()
-                ?? throw new KeyNotFoundException($"A hiba a megadott azonosítóval ({faultId}) nem található.");
-
-            return faultDto;
-        }
-
         public async Task<List<FaultResponseDto>> GetFaultsByCollegiateIdAsync(int collegiateId)
         {
             if ((await _unitOfWork.UserRepository.GetByIdAsync(collegiateId)) is null)
