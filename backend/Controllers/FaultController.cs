@@ -65,6 +65,7 @@ namespace HibaVonal_03.Controllers.Fault
         }
 
         [HttpGet("{faultId}")]
+        [Authorize(Roles = "MaintenanceManager,Administrator")]
         public async Task<ActionResult> GetFaultById(int faultId)
         {
             try

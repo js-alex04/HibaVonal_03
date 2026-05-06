@@ -22,9 +22,14 @@ namespace HibaVonal_03.Services
         }
 
         //Create
+        // Create
         public async Task<FaultResponseDto> CreateFaultAsync(FaultCreateDto fault, int collegiateId)
         {
             var newFault = _mapper.Map<Fault>(fault);
+
+            newFault.CollegiateId = collegiateId;
+            newFault.Date = DateTime.UtcNow;
+            newFault.Status = FaultStatus.Pending;
 
             await _unitOfWork.FaultRepository.AddAsync(newFault);
             await _unitOfWork.SaveChangesAsync();
