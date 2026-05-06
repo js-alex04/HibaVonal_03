@@ -33,9 +33,9 @@ const Dashboard = () => {
           <span className="role-badge">{user.role}</span>
         </div>
         <div className="header-right">
-          <span className="user-info">Welcome, {user.name}</span>
+          <span className="user-info">Üdvözlünk, {user.name}</span>
           <button onClick={logout} className="btn-logout">
-            Logout
+            Kijelentkezés
           </button>
         </div>
       </header>
