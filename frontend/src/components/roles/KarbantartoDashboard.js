@@ -3,10 +3,10 @@ import { useAuth } from '../../context/AuthContext';
 import '../../styles/RoleDashboards.css';
 
 const KarbantartoDashboard = () => {
-  const { user, tasks, toolRequests, createToolRequest, hasPermission, updateTaskStatus, equipment } = useAuth();
+  const { user, tasks, toolRequests, createToolRequest, hasPermission, updateTaskStatus } = useAuth();
   const [toolName, setToolName] = useState('');
   const [quantity, setQuantity] = useState(1);
-  const [reason, setReason] = useState('');
+  const [selectedTaskId, setSelectedTaskId] = useState('');
   const [error, setError] = useState('');
 
   // generic sanitizer for text fields (allow accents and punctuation)
@@ -17,22 +17,13 @@ const KarbantartoDashboard = () => {
   const myTasks = tasks.filter(t => String(t.assignedTo) === String(user.id));
   const myToolRequests = toolRequests.filter(tr => String(tr.requestedBy) === String(user.id));
 
-  // we no longer free‑type tool name, using dropdown so sanitization not needed here
-  // Sanitize reason - allow letters, numbers, spaces, hyphens and Hungarian accents
-  const sanitizeReason = (input) => {
-    return input.replace(/[^a-zA-Z0-9\s\-áéíóöőúüűÁÉÍÓÖŐÚÜŰ.,!?]/g, '');
-  };
-
-  const selectedEquipment = equipment.find(eq => eq.name === toolName);
-  const maxAvailable = selectedEquipment ? selectedEquipment.quantity : 1;
-
-  const handleRequestTool = (e) => {
+  const handleRequestTool = async (e) => {
     e.preventDefault();
     setError('');
 
     // Validate inputs
     if (!toolName || toolName.trim().length === 0) {
-      setError('Kérjük, válassz egy eszközt!');
+      setError('Kérjük, add meg az eszköz nevét!');
       return;
     }
 
@@ -46,31 +37,21 @@ const KarbantartoDashboard = () => {
       return;
     }
 
-    if (selectedEquipment && quantity > maxAvailable) {
-      setError(`Maximum ${maxAvailable} db kérhető ebből az eszközből!`);
-      return;
-    }
-
-    if (!reason || reason.trim().length === 0) {
-      setError('Kérjük, add meg az igénylés indokát!');
-      return;
-    }
-
-    if (reason.length < 5) {
-      setError('Az indoknak legalább 5 karakter hosszúnak kell lennie!');
+    if (!selectedTaskId) {
+      setError('Kérjük, válassz egy kapcsolódó feladatot!');
       return;
     }
 
     try {
-      createToolRequest(
+      await createToolRequest(
         toolName.trim(),
         quantity,
-        reason.trim(),
-        user.id
+        user.id,
+        selectedTaskId
       );
       setToolName('');
       setQuantity(1);
-      setReason('');
+      setSelectedTaskId('');
       alert('Eszközigénylés elküldve! Kérjük, várj a vezetői jóváhagyásra.');
     } catch (error) {
       setError('Hiba: ' + error.message);
@@ -129,18 +110,13 @@ const KarbantartoDashboard = () => {
 
               <div className="form-group">
                 <label>Eszköz Neve</label>
-                <select
+                <input
+                  type="text"
                   value={toolName}
                   onChange={(e) => setToolName(e.target.value)}
+                  placeholder="Írd be az eszköz nevét..."
                   required
-                >
-                  <option value="">-- válassz egy eszközt --</option>
-                  {equipment.map(eq => (
-                    <option key={eq.id} value={eq.name} disabled={eq.quantity === 0}>
-                      {eq.name} (Elérhető: {eq.quantity} db)
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
 
               <div className="form-group">
@@ -150,24 +126,27 @@ const KarbantartoDashboard = () => {
                   value={quantity}
                   onChange={(e) => setQuantity(parseInt(e.target.value))}
                   min="1"
-                  max={maxAvailable}
                   required
                 />
-                {selectedEquipment && (
-                  <small className="form-hint" style={{color: '#667eea'}}>Maximum {maxAvailable} db kérhető ebből a raktáron lévő eszközből.</small>
-                )}
               </div>
 
               <div className="form-group">
-                <label>Indok / Feladat Leírása</label>
-                <textarea
-                  value={reason}
-                  onChange={(e) => setReason(sanitizeReason(e.target.value))}
-                  placeholder="Miért van szükséged ezekre a szerszámokra?"
-                  rows="4"
+                <label>Kapcsolódó Feladat</label>
+                <select
+                  value={selectedTaskId}
+                  onChange={(e) => setSelectedTaskId(e.target.value)}
                   required
-                />
-                <small className="form-hint">Minimum 5 karakter (speciális karakterek nélkül)</small>
+                >
+                  <option value="">-- válassz egy feladatot --</option>
+                  {myTasks.filter(t => !t.completed).map(task => (
+                    <option key={task.id} value={task.id}>
+                      {task.title}
+                    </option>
+                  ))}
+                </select>
+                {myTasks.filter(t => !t.completed).length === 0 && (
+                  <small className="form-hint" style={{color: '#fc8181'}}>Nincs folyamatban lévő feladatod! Eszközt csak feladathoz tudsz igényelni.</small>
+                )}
               </div>
 
               <button type="submit" className="btn-primary">
@@ -188,7 +167,9 @@ const KarbantartoDashboard = () => {
                       <span className={`status-badge status-${req.status}`}>{req.status}</span>
                     </div>
                     <p>Mennyiség: {req.quantity}</p>
-                    <p>{req.reason}</p>
+                    {req.taskId && (
+                      <p><strong>Feladat:</strong> {tasks.find(t => String(t.id) === String(req.taskId))?.title || 'Ismeretlen feladat'}</p>
+                    )}
                     {req.status === 'pending' && <p className="pending-notice">⏳ Vezetői jóváhagyásra vár</p>}
                     {req.status === 'approved' && <p className="approved-notice">✅ Jóváhagyva - Átveheted az eszközt</p>}
                     {req.status === 'rejected' && <p className="rejected-notice">❌ Igénylés elutasítva</p>}

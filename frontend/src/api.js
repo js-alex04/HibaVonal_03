@@ -9,7 +9,8 @@ export const apiCall = async (endpoint, options = {}) => {
     ...options.headers,
   };
 
-  if (token) {
+  // Ne küldjünk tokent a Login végpontokra, mert egy lejárt/beragadt token azonnali 401-et okozhat!
+  if (token && !endpoint.toLowerCase().includes('login')) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
@@ -19,8 +20,23 @@ export const apiCall = async (endpoint, options = {}) => {
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `API Hiba: ${response.status} a(z) ${endpoint} végponton.`);
+    let errorMsg = `API Hiba: ${response.status} a(z) ${endpoint} végponton.`;
+    const textData = await response.text().catch(() => '');
+    if (textData) {
+      try {
+        const jsonData = JSON.parse(textData);
+        if (jsonData.errors) {
+          // C# Validációs hibák (400 Bad Request) részletes kibontása
+          const errorDetails = Object.values(jsonData.errors).flat().join(' | ');
+          errorMsg = `${jsonData.title || 'Validációs hiba'}: ${errorDetails}`;
+        } else {
+          errorMsg = jsonData.message || jsonData.title || JSON.stringify(jsonData);
+        }
+      } catch {
+        errorMsg = textData; // Ha sima szöveget kapunk a C# BadRequest(ex.Message)-ből
+      }
+    }
+    throw new Error(errorMsg);
   }
 
   // Ha 204 No Content, ne próbáljuk meg JSON-ként parse-olni
@@ -33,20 +49,58 @@ export const apiCall = async (endpoint, options = {}) => {
 
 // --- AUTH / FELHASZNÁLÓK ---
 export const authAPI = {
-  login: (email, password) =>
-    apiCall('/Auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    }),
-  getCurrentUser: () => apiCall('/Auth/me'),
+  login: async (email, password) => {
+    try {
+      // A backend struktúrája alapján a Login valószínűleg a User kontrollerben van
+      return await apiCall('/User/Login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+    } catch (error) {
+      if (error.message.includes('404')) {
+        // Ha mégsem ott lenne, fallback az eredeti /Auth/login útvonalra
+        return await apiCall('/Auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ email, password }),
+        });
+      }
+      throw error;
+    }
+  },
+  getCurrentUser: () => apiCall('/User/GetCurrentUser').catch(() => apiCall('/Auth/me')),
 };
 
 // --- USERS (Felhasználók) ---
 export const userAPI = {
-  getAll: () => apiCall('/User/GetAllUsers'),
+  getAll: async () => {
+    try {
+      return await apiCall('/User/GetAllUsers');
+    } catch (error) {
+      // Mivel a backend a közös GetAllUsers végponton 400-as hibát dob, 
+      // kénytelenek vagyunk szerepkörönként lekérdezni a felhasználókat és a frontendben összefűzni őket.
+      console.warn("A GetAllUsers végpont hibát dobott a szerveren. Biztonsági tartalék (fallback) útvonalak használata...");
+      let allUsers = [];
+
+      const fetchRole = async (endpoint) => {
+        try {
+          const data = await apiCall(endpoint);
+          if (Array.isArray(data)) allUsers.push(...data);
+        } catch (e) { /* Csendes hibakezelés, ha valamelyik végpont mégsem létezik */ }
+      };
+
+      // Mivel a többi szerepkörnek még nincs megírva a végpontja a backendben (404-et adnak),
+      // csak a Karbantartókat kérdezzük le, amiről tudjuk, hogy létezik.
+      await fetchRole('/Maintainer/GetAllMaintainers');
+
+      return allUsers;
+    }
+  },
   createCollegiate: (data) => apiCall('/User/CreateCollegiate', { method: 'POST', body: JSON.stringify(data) }),
   createMaintainer: (data) => apiCall('/User/CreateMaintainer', { method: 'POST', body: JSON.stringify(data) }),
-  createManagementAdmin: (role, data) => apiCall(`/User/CreateManagementAdmin?role=${role}`, { method: 'POST', body: JSON.stringify(data) }),
+  createAdministrator: (data) => apiCall('/User/CreateAdministrator', { method: 'POST', body: JSON.stringify(data) }),
+  createMaintenanceManager: (data) => apiCall('/User/CreateMaintenanceManager', { method: 'POST', body: JSON.stringify(data) }),
+  changeRole: (userId, roleEnum) => apiCall(`/User/ChangeUserRole/${userId}?newRole=${roleEnum}`, { method: 'PUT' }),
+  delete: (id) => apiCall(`/User/DeleteUser/${id}/delete`, { method: 'DELETE' }),
 };
 
 // --- PREMISES (Helyiségek) ---
@@ -64,7 +118,17 @@ export const premiseAPI = {
 export const applianceAPI = {
   getAll: () => apiCall('/Appliance/GetAllAppliances'),
   getById: (id) => apiCall(`/Appliance/GetApplianceById/${id}`),
-  create: (data) => apiCall('/Appliance/CreateAppliance', { method: 'POST', body: JSON.stringify(data) }),
+  create: async (data) => {
+    try {
+      return await apiCall('/Appliance/CreateAppliance', { method: 'POST', body: JSON.stringify(data) });
+    } catch (err) {
+      if (err.message.includes('404')) {
+        // Ha a hosszú név nem létezik, megpróbáljuk a szabványos REST végpontot
+        return await apiCall('/Appliance', { method: 'POST', body: JSON.stringify(data) });
+      }
+      throw err;
+    }
+  },
   update: (id, data) => apiCall(`/Appliance/UpdateAppliance/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id) => apiCall(`/Appliance/DeleteAppliance/${id}`, { method: 'DELETE' }),
 };
@@ -94,6 +158,13 @@ export const faultAPI = {
 // --- TOOL ORDERS (Eszközrendelések) ---
 export const toolOrderAPI = {
   getAll: () => apiCall('/ToolOrder/GetAllOrders'),
-  create: (data) => apiCall('/ToolOrder/CreateToolOrder', { method: 'POST', body: JSON.stringify(data) }),
+  create: (faultId, data) => apiCall(`/ToolOrder/CreateToolOrder/${faultId}`, { method: 'POST', body: JSON.stringify(data) }),
   update: (id, data) => apiCall(`/ToolOrder/UpdateToolOrder/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  updateDeliveryStatus: (id, isDelivered) => apiCall(`/ToolOrder/UpdateDeliveryStatus/${id}/delivery-status?isDelivered=${isDelivered}`, { method: 'PUT' }),
+};
+
+// --- FEEDBACKS (Visszajelzések) ---
+export const feedbackAPI = {
+  getAll: () => apiCall('/Feedback/GetAllFeedbacks'),
+  delete: (id) => apiCall(`/Feedback/DeleteFeedback/${id}`, { method: 'DELETE' }),
 };

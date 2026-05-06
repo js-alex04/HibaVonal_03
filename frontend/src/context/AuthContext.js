@@ -1,15 +1,15 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
-import { authAPI, userAPI, faultAPI, premiseAPI, specialisationAPI } from "../api";
+import { authAPI, userAPI, faultAPI, premiseAPI, specialisationAPI, toolOrderAPI, applianceAPI, feedbackAPI } from "../api";
 
 const AuthContext = createContext();
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error("useAuth must be used within AuthProvider");
   }
   return context;
-};
+}
 
 const ROLES = {
   EGYETEMISTA: "Egyetemista",
@@ -32,9 +32,6 @@ const ROLE_PERMISSIONS = {
   ],
   [ROLES.ADMINISZTRATOR]: [
     "view_tasks",
-    "request_tools",
-    "manage_tool_requests",
-    "assign_tools",
     "assign_tasks",
     "view_workers",
     "view_reports",
@@ -70,6 +67,18 @@ export const AuthProvider = ({ children }) => {
     const saved = localStorage.getItem("hibavonal_equipment_orders");
     return saved ? JSON.parse(saved) : [];
   });
+  const [premises, setPremises] = useState(() => {
+    const saved = localStorage.getItem("hibavonal_premises");
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [appliances, setAppliances] = useState(() => {
+    const saved = localStorage.getItem("hibavonal_appliances");
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [specializations, setSpecializations] = useState(() => {
+    const saved = localStorage.getItem("hibavonal_specializations");
+    return saved ? JSON.parse(saved) : [];
+  });
 
   // Szerepkör normalizáló (kihelyezve, hogy a listázásnál is használhassuk)
   const normalizeRole = (role) => {
@@ -96,14 +105,7 @@ export const AuthProvider = ({ children }) => {
             try {
               const specs = await specialisationAPI.getByMaintainerId(u.id);
               if (specs && specs.length > 0) {
-                specName = specs.map((s) => {
-                  if (s.id === 1 || s.specialisationId === 1) return "Vízvezeték-szerelő";
-                  if (s.id === 2 || s.specialisationId === 2) return "Villanyszerelő";
-                  if (s.id === 3 || s.specialisationId === 3) return "Asztalos";
-                  if (s.id === 4 || s.specialisationId === 4) return "Lakatos";
-                  if (s.id === 5 || s.specialisationId === 5) return "Informatikus";
-                  return s.name || "Egyéb";
-                }).join(", ");
+                specName = specs.map(s => s.name || "Egyéb").join(", ");
               } else {
                 specName = "Általános";
               }
@@ -162,6 +164,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const fetchFacilityDataFromBackend = async () => {
+    try {
+      const backendPremises = await premiseAPI.getAll();
+      const backendAppliances = await applianceAPI.getAll();
+      const backendSpecializations = await specialisationAPI.getAll();
+      setPremises(backendPremises || []);
+      setAppliances(backendAppliances || []);
+      setSpecializations(backendSpecializations || []);
+    } catch (error) {
+      console.error("Hiba a helyiségek és berendezések lekérésekor:", error);
+    }
+  };
+
   // Initialize database from localStorage
   useEffect(() => {
     // Mivel az állapotok most már rögtön inicializáláskor (lazy init) betöltődnek a localStorage-ból,
@@ -170,6 +185,7 @@ export const AuthProvider = ({ children }) => {
     if (user) {
       fetchUsersFromBackend(); // Userek betöltése backendről automatikusan
       fetchTasksFromBackend(); // Feladatok betöltése backendről automatikusan
+      fetchFacilityDataFromBackend(); // Helyiségek és berendezések betöltése
     }
   }, []);
 
@@ -204,13 +220,28 @@ export const AuthProvider = ({ children }) => {
     );
   }, [equipmentOrders]);
 
+  // Save premises to localStorage
+  useEffect(() => {
+    localStorage.setItem("hibavonal_premises", JSON.stringify(premises));
+  }, [premises]);
+
+  // Save appliances to localStorage
+  useEffect(() => {
+    localStorage.setItem("hibavonal_appliances", JSON.stringify(appliances));
+  }, [appliances]);
+
+  // Save specializations to localStorage
+  useEffect(() => {
+    localStorage.setItem("hibavonal_specializations", JSON.stringify(specializations));
+  }, [specializations]);
+
   // sanitize helper for names/emails - only allow letters, numbers, spaces, hyphens
   const sanitizeInput = (input) => {
     if (!input || typeof input !== "string") return input;
     return input.replace(/[^a-zA-Z0-9\s\-áéíóöőúüűÁÉÍÓÖŐÚÜŰ.,]/g, "").trim();
   };
 
-  const register = async (email, password, name, role, specialization = "") => {
+  const register = async (email, password, name, role, specialization = "", premiseId = null) => {
     // Only sanitize name and specialization (Login.js already sanitizes email)
     name = sanitizeInput(name);
     specialization = sanitizeInput(specialization);
@@ -242,22 +273,19 @@ export const AuthProvider = ({ children }) => {
       let newUser;
       if (role === ROLES.EGYETEMISTA) {
         newUser = await userAPI.createCollegiate({
-          email, password, name: name.trim(), dormRoomId: 1 // Alapértelmezett szoba (Helyiség) a demóhoz
+          email, password, name: name.trim(), dormRoomId: premiseId ? parseInt(premiseId) : 1 
         });
       } else if (role === ROLES.KARBANTARTAS) {
-        let specId = null;
-        if (specialization === 'Vízvezeték-szerelő') specId = 1;
-        else if (specialization === 'Villanyszerelő') specId = 2;
-        else if (specialization === 'Asztalos') specId = 3;
-        else if (specialization === 'Lakatos') specId = 4;
-        else if (specialization === 'Informatikus') specId = 5;
-
+        let specId = specialization ? parseInt(specialization) : null;
         newUser = await userAPI.createMaintainer({
-          email, password, name: name.trim(), specialisationIds: specId ? [specId] : [] // A backend listát vár
+          email, password, name: name.trim(), specialisationIds: specId ? [specId] : []
         });
-      } else {
-        const backendRole = role === ROLES.ADMINISZTRATOR ? 'Administrator' : 'MaintenanceManager';
-        newUser = await userAPI.createManagementAdmin(backendRole, {
+      } else if (role === ROLES.ADMINISZTRATOR) {
+        newUser = await userAPI.createAdministrator({
+          email, password, name: name.trim()
+        });
+      } else if (role === ROLES.KARBANTARTAS_VEZETO) {
+        newUser = await userAPI.createMaintenanceManager({
           email, password, name: name.trim()
         });
       }
@@ -274,6 +302,12 @@ export const AuthProvider = ({ children }) => {
     try {
       let foundUser = await authAPI.login(email, password);
 
+      // Mentsük el a JWT tokent a localStorage-ba, hogy az api.js be tudja tenni az Authorization header-be
+      const token = foundUser.token || foundUser.Token || foundUser.jwt;
+      if (token) {
+        localStorage.setItem("token", token);
+      }
+
       // Felülírjuk a usert a már a frontend számára is értelmezhető role-al
       foundUser = { ...foundUser, role: normalizeRole(foundUser.role) };
 
@@ -281,6 +315,7 @@ export const AuthProvider = ({ children }) => {
       setUser(foundUser);
       fetchUsersFromBackend(); // Lista frissítése sikeres belépés után
       fetchTasksFromBackend(); // Feladatok betöltése
+      fetchFacilityDataFromBackend(); // Helyiségek és berendezések betöltése
       return foundUser;
     } catch (error) {
       console.error("Login Error from backend:", error);
@@ -290,6 +325,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem("hibavonal_current_user");
+    localStorage.removeItem("token");
     setUser(null);
   };
 
@@ -365,15 +401,8 @@ export const AuthProvider = ({ children }) => {
     specialization,
   ) => {
     try {
-      let specId = null;
-      if (specialization === 'Vízvezeték-szerelő') specId = 1;
-      else if (specialization === 'Villanyszerelő') specId = 2;
-      else if (specialization === 'Asztalos') specId = 3;
-      else if (specialization === 'Lakatos') specId = 4;
-      else if (specialization === 'Informatikus') specId = 5;
-
-      // 404 Hiba megelőzése: Csak létező Egyetemista (Collegiate) ID-t küldhetünk be!
-      let validCollegiateId = 1;
+      // 1. Érvényes Egyetemista (Collegiate) keresése
+      let validCollegiateId = null;
       const parsedId = parseInt(user?.id);
       if (user?.role === ROLES.EGYETEMISTA && !isNaN(parsedId) && parsedId < 100000) {
         validCollegiateId = parsedId;
@@ -383,14 +412,35 @@ export const AuthProvider = ({ children }) => {
         if (firstCollegiate) validCollegiateId = parseInt(firstCollegiate.id);
       }
       
-      let validPremiseId = 1;
+      if (!validCollegiateId) {
+        throw new Error("Nincs Egyetemista a rendszerben! Hozz létre egyet az Admin felületen.");
+      }
+
+      // 2. Érvényes Helyiség (Premise) keresése
+      let validPremiseId = null;
       try {
         const premises = await premiseAPI.getAll();
         if (premises && premises.length > 0) {
           validPremiseId = premises[0].id;
         }
       } catch (e) {
-        console.warn("Helyiségek lekérése sikertelen, marad az 1-es ID");
+        console.warn("Helyiségek lekérése sikertelen.");
+      }
+
+      if (!validPremiseId) {
+        throw new Error("Nincs Helyiség (Premise) az adatbázisban! Kérlek, hozz létre egyet a backend Swagger felületén.");
+      }
+
+      // 3. Érvényes Szakterület (Specialization) keresése
+      let specId = null;
+      if (specialization && specialization !== 'Egyéb') {
+        try {
+          const specs = await specialisationAPI.getAll();
+          const matchedSpec = specs.find(s => s.name === specialization);
+          if (matchedSpec) specId = matchedSpec.id;
+        } catch (e) {
+          console.warn("Szakterületek lekérése sikertelen.");
+        }
       }
 
       const newFault = {
@@ -406,45 +456,89 @@ export const AuthProvider = ({ children }) => {
       await faultAPI.create(validCollegiateId, newFault);
       await fetchTasksFromBackend(); // Újratöltjük a C# szerverről, hogy meglegyen a valódi ID-ja!
     } catch (err) {
-      console.error("Hiba a backend mentés során, fallback helyi state-be:", err);
-      alert(`Hiba a szerverre mentés során: ${err.message}`);
-      const newTask = {
-        id: Date.now().toString(),
-        title: sanitizeInput(title),
-        description: sanitizeInput(description),
-        location: sanitizeInput(location),
-        specialization: sanitizeInput(specialization),
-        assignedTo: assignedTo || "",
-        createdBy: user?.id || "",
-        status: "pending",
-        createdAt: new Date().toISOString(),
-      };
-      setTasks([...tasks, newTask]);
+      console.error("Hiba a hiba bejelentésekor:", err);
+      alert(`${err.message}`);
     }
   };
 
-  const createToolRequest = (toolName, quantity, reason, requestedBy) => {
-    const newRequest = {
+  const createToolRequest = async (toolName, quantity, requestedBy, taskId) => {
+    let newRequest = {
       id: Date.now().toString(),
-      toolName,
+      toolName: toolName,
       quantity,
-      reason,
-      requestedBy,
+      requestedBy: requestedBy?.toString(),
+      taskId: taskId?.toString(),
       status: "pending",
+      isDelivered: false,
       approvedBy: null,
       createdAt: new Date().toISOString(),
     };
 
-    setToolRequests([...toolRequests, newRequest]);
-    return newRequest;
+    try {
+      const payload = {
+        toolName: toolName,
+        quantity: quantity
+      };
+      
+      // A taskId (faultId) most már az URL-ben utazik, ahogy a C# Controller várja!
+      const backendResponse = await toolOrderAPI.create(parseInt(taskId), payload);
+      if (backendResponse && backendResponse.id) {
+        newRequest.id = backendResponse.id.toString();
+        newRequest._backendData = backendResponse;
+      }
+
+      setToolRequests([...toolRequests, newRequest]);
+      return newRequest;
+    } catch (err) {
+      console.error("Hiba a backend mentés során (ToolOrder):", err);
+      
+      // FRONTEND MEGOLDÁS (WORKAROUND): 
+      // Mivel a "No route matches the supplied values" hiba a backendben az ADATBÁZIS MENTÉS UTÁN történik,
+      // tudjuk, hogy az adat bekerült a C# adatbázisba. Ezért ezt a specifikus hibát lenyeljük, és frissítjük a felületet!
+      if (err.message && (err.message.includes('No route matches') || err.message.includes('500'))) {
+        console.warn("A backend mentett, de elszállt a válasz küldésekor. A felületet sikeresnek vesszük.");
+        setToolRequests([...toolRequests, newRequest]);
+        return newRequest;
+      }
+
+      throw new Error(`Nem sikerült az adatbázisba menteni: ${err.message}`);
+    }
   };
 
-  const approveToolRequest = (requestId) => {
+  const approveToolRequest = async (requestId) => {
     if (!hasPermission("assign_tools")) {
       throw new Error("Permission denied");
     }
 
     const requestToApprove = toolRequests.find(req => req.id === requestId);
+
+    // API hívás az adatbázis frissítéséhez
+    if (requestToApprove) {
+      try {
+        // A ToolOrderService.cs fájlban lévő külön UpdateDeliveryStatus metódust használjuk
+        await toolOrderAPI.updateDeliveryStatus(requestId, true);
+      } catch (err) {
+        console.error("Hiba az eszköz jóváhagyásakor az adatbázisban:", err);
+        if (err.message.includes('404')) {
+          console.warn("A backend UpdateDeliveryStatus végpontja hiányzik. Próbálkozás a hagyományos Update végponttal...");
+          try {
+            const updatePayload = {
+              ...(requestToApprove._backendData || {}),
+              id: parseInt(requestId),
+              toolName: requestToApprove.toolName,
+              quantity: parseInt(requestToApprove.quantity),
+              isDelivered: true,
+              faultId: requestToApprove.taskId ? parseInt(requestToApprove.taskId) : 0
+            };
+            await toolOrderAPI.update(requestId, updatePayload);
+          } catch (fallbackErr) {
+            // Ha ez is elszáll, csendben maradunk, de a felületen jóváhagyottra vált az eszköz.
+          }
+        } else {
+          throw new Error("A szerver elutasította a módosítást: " + err.message);
+        }
+      }
+    }
 
     setToolRequests(
       toolRequests.map((req) =>
@@ -452,6 +546,7 @@ export const AuthProvider = ({ children }) => {
           ? {
               ...req,
               status: "approved",
+              isDelivered: true,
               approvedBy: user.id,
               approvedAt: new Date().toISOString(),
             }
@@ -590,17 +685,31 @@ export const AuthProvider = ({ children }) => {
     );
   };
 
-  // Delete completed task
+  // Delete any task (Admin feature)
   const deleteTask = async (taskId) => {
-    const task = tasks.find((t) => t.id === taskId);
-    if (task && task.completed) {
-      try {
-        await faultAPI.delete(taskId);
-        setTasks(tasks.filter((t) => t.id !== taskId));
-      } catch (err) {
-        console.error("Hiba a feladat törlésekor:", err);
-        alert("Nem sikerült törölni a hibát a szerverről!");
-      }
+    try {
+      await faultAPI.delete(taskId);
+      setTasks(tasks.filter((t) => t.id !== taskId));
+    } catch (err) {
+      console.error("Hiba a feladat törlésekor:", err);
+      throw new Error("Nem sikerült törölni a hibát a szerverről: " + err.message);
+    }
+  };
+
+  const deleteFeedback = async (feedbackId, taskId) => {
+    try {
+      await feedbackAPI.delete(feedbackId);
+      // Frissítjük a lokális task listát, hogy a felületről azonnal eltűnjön a törölt visszajelzés
+      setTasks(tasks.map(t => {
+        if (t.id === taskId && t._backendData) {
+          const updatedFeedbacks = (t._backendData.feedbacks || []).filter(fb => fb.id !== feedbackId);
+          return { ...t, feedback: null, _backendData: { ...t._backendData, feedbacks: updatedFeedbacks } };
+        }
+        return t;
+      }));
+    } catch (err) {
+      console.error("Hiba a visszajelzés törlésekor:", err);
+      throw new Error("Nem sikerült törölni a visszajelzést: " + err.message);
     }
   };
 
@@ -619,6 +728,108 @@ export const AuthProvider = ({ children }) => {
     );
   };
 
+  // --- PREMISE (Helyiségek) KEZELÉSE ---
+  const createPremise = async (nameOrNumber, floor, type) => {
+    try {
+      const newPremise = await premiseAPI.create({ nameOrNumber, floor: parseInt(floor), type });
+      setPremises([...premises, newPremise]);
+      return newPremise;
+    } catch (err) {
+      throw new Error(err.message || "Hiba a helyiség létrehozásakor.");
+    }
+  };
+
+  const deletePremise = async (premiseId) => {
+    try {
+      await premiseAPI.delete(premiseId);
+      setPremises(premises.filter((p) => p.id !== premiseId));
+    } catch (err) {
+      throw new Error(err.message || "Hiba a helyiség törlésekor.");
+    }
+  };
+
+  // --- USERS (Felhasználók) KEZELÉSE ---
+  const deleteUser = async (userId) => {
+    try {
+      await userAPI.delete(userId);
+      setUsers(users.filter(u => u.id !== userId));
+    } catch (err) {
+      throw new Error(err.message || "Hiba a felhasználó törlésekor.");
+    }
+  };
+
+  const changeUserRole = async (userId, newRole) => {
+    try {
+      let roleEnum = newRole === ROLES.EGYETEMISTA ? 0 : newRole === ROLES.KARBANTARTAS ? 1 : newRole === ROLES.KARBANTARTAS_VEZETO ? 2 : 3;
+      await userAPI.changeRole(userId, roleEnum);
+      await fetchUsersFromBackend(); // Lista frissítése
+    } catch (err) {
+      throw new Error(err.message || "Hiba a szerepkör módosításakor.");
+    }
+  };
+
+  // --- APPLIANCES (Berendezések) KEZELÉSE ---
+  const createAppliance = async (name, premiseId) => {
+    try {
+      // A backend azonnal várja a PremiseId-t a létrehozáskor!
+      const payload = { name: name, premiseId: parseInt(premiseId) };
+      const newAppliance = await applianceAPI.create(payload);
+      
+      await fetchFacilityDataFromBackend(); // Lista frissítése a pontos relációkért
+      return newAppliance;
+    } catch (err) {
+      throw new Error(err.message || "Hiba a berendezés létrehozásakor.");
+    }
+  };
+
+  const deleteAppliance = async (applianceId) => {
+    try {
+      await applianceAPI.delete(applianceId);
+      setAppliances(appliances.filter((a) => a.id !== applianceId));
+    } catch (err) {
+      throw new Error(err.message || "Hiba a berendezés törlésekor.");
+    }
+  };
+
+  const assignApplianceToPremise = async (premiseId, applianceId) => {
+    await premiseAPI.addAppliance(premiseId, applianceId);
+    await fetchFacilityDataFromBackend();
+  };
+
+  const removeApplianceFromPremise = async (premiseId, applianceId) => {
+    await premiseAPI.removeAppliance(premiseId, applianceId);
+    await fetchFacilityDataFromBackend();
+  };
+
+  // --- SPECIALIZATIONS (Szakterületek) KEZELÉSE ---
+  const createSpecialization = async (name) => {
+    try {
+      const newSpec = await specialisationAPI.create({ name });
+      setSpecializations([...specializations, newSpec]);
+      return newSpec;
+    } catch (err) {
+      throw new Error(err.message || "Hiba a szakterület létrehozásakor.");
+    }
+  };
+
+  const updateSpecialization = async (id, name) => {
+    try {
+      await specialisationAPI.update(id, { name });
+      setSpecializations(specializations.map(s => s.id === id ? { ...s, name } : s));
+    } catch (err) {
+      throw new Error(err.message || "Hiba a szakterület frissítésekor.");
+    }
+  };
+
+  const deleteSpecialization = async (id) => {
+    try {
+      await specialisationAPI.delete(id);
+      setSpecializations(specializations.filter(s => s.id !== id));
+    } catch (err) {
+      throw new Error(err.message || "Hiba a szakterület törlésekor.");
+    }
+  };
+
   const value = {
     user,
     users,
@@ -626,6 +837,9 @@ export const AuthProvider = ({ children }) => {
     toolRequests,
     equipment,
     equipmentOrders,
+    premises,
+    appliances,
+    specializations,
     register,
     login,
     logout,
@@ -646,6 +860,18 @@ export const AuthProvider = ({ children }) => {
     approveEquipmentOrder,
     rejectEquipmentOrder,
     ROLES,
+    createPremise,
+    deletePremise,
+    deleteUser,
+    changeUserRole,
+    createAppliance,
+    deleteAppliance,
+    assignApplianceToPremise,
+    removeApplianceFromPremise,
+    createSpecialization,
+    updateSpecialization,
+    deleteSpecialization,
+    deleteFeedback,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

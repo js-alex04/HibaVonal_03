@@ -3,18 +3,12 @@ import { useAuth } from '../context/AuthContext';
 import '../styles/Login.css';
 
 const Login = () => {
-  const { login, register, ROLES } = useAuth();
-  const [isLogin, setIsLogin] = useState(true);
+  const { login, ROLES } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [role, setRole] = useState(ROLES.EGYETEMISTA);
-  const [specialization, setSpecialization] = useState('');
-  const SPECIALIZATIONS = ['Vízvezeték-szerelő', 'Villanyszerelő', 'Asztalos', 'Lakatos', 'Informatikus', 'Egyéb'];
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,29 +28,8 @@ const Login = () => {
     }
 
     try {
-      if (isLogin) {
-        await login(email, password);
-        setSuccess('Sikeres bejelentkezés!');
-      } else {
-        // Registration validation
-        if (!name || name.trim().length === 0) {
-          setError('Kérjük, add meg a nevedet!');
-          return;
-        }
-
-        if (name.length < 2 || !/[a-zA-Z0-9]/.test(name)) {
-          setError('A névnek legalább 2 karakternek kell lennie, és tartalmaznia kell betűket vagy számokat!');
-          return;
-        }
-
-        await register(email, password, name.trim(), role, specialization);
-        setSuccess('Sikeres regisztráció! Kérlek, jelentkezz be.');
-        setIsLogin(true);
-        setEmail('');
-        setPassword('');
-        setName('');
-        setRole(ROLES.EGYETEMISTA);
-      }
+      await login(email, password);
+      setSuccess('Sikeres bejelentkezés!');
     } catch (err) {
       setError(err.message);
     }
@@ -73,24 +46,18 @@ const Login = () => {
     return input.replace(/[^a-zA-Z0-9@.\-_]/g, '').trim();
   };
 
-  // Sanitize name - allowed letters, numbers, spaces, hyphens only
-  const sanitizeName = (input) => {
-    return input.replace(/[^a-zA-Z0-9\s\-áéíóöőúüűÁÉÍÓÖŐÚÜŰ.,]/g, '');
-  };
-
-  // Demo credentials
+  // Demo bejelentkezési adatok (Ezeket kell létrehoznod az adatbázisban az Admin felületen)
   const setDemoCredentials = (demoRole) => {
     const demoAccounts = {
-      [ROLES.EGYETEMISTA]: { email: 'egyetemista@test.com', password: 'test123' },
-      [ROLES.KARBANTARTAS]: { email: 'karbantarto@test.com', password: 'test123' },
-      [ROLES.KARBANTARTAS_VEZETO]: { email: 'vezeto@test.com', password: 'test123' },
-      [ROLES.ADMINISZTRATOR]: { email: 'admin@test.com', password: 'test123' }
+      [ROLES.EGYETEMISTA]: { email: 'hallgato1@hibavonal.hu', password: 'pass123' },
+      [ROLES.KARBANTARTAS]: { email: 'sanyi@hibavonal.hu', password: 'pass123' },
+      [ROLES.KARBANTARTAS_VEZETO]: { email: 'manager@hibavonal.hu', password: 'pass123' },
+      [ROLES.ADMINISZTRATOR]: { email: 'admin@hibavonal.hu', password: 'pass123' } // A JWT tokened alapján ez a létező adminod
     };
 
     const demo = demoAccounts[demoRole];
     setEmail(demo.email);
     setPassword(demo.password);
-    setRole(demoRole);
   };
 
   return (
@@ -133,102 +100,47 @@ const Login = () => {
             <small className="form-hint">Minimum 4 karakter (speciális karakterek, pl. !@#$%^&* engedélyezettek)</small>
           </div>
 
-          {!isLogin && (
-            <>
-              <div className="form-group">
-                <label>Név</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(sanitizeName(e.target.value))}
-                  placeholder="pl., Kovács János"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Szerepkör</label>
-                <select value={role} onChange={(e) => setRole(e.target.value)}>
-                  <option value={ROLES.EGYETEMISTA}>{ROLES.EGYETEMISTA}</option>
-                  <option value={ROLES.KARBANTARTAS}>{ROLES.KARBANTARTAS}</option>
-                  <option value={ROLES.KARBANTARTAS_VEZETO}>{ROLES.KARBANTARTAS_VEZETO}</option>
-                  <option value={ROLES.ADMINISZTRATOR}>{ROLES.ADMINISZTRATOR}</option>
-                </select>
-              </div>
-              {role === ROLES.KARBANTARTAS && (
-                <div className="form-group">
-                  <label>Szakterület</label>
-                  <select value={specialization} onChange={(e) => setSpecialization(e.target.value)} required>
-                    <option value="">-- válassz --</option>
-                    {SPECIALIZATIONS.map(s => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-            </>
-          )}
-
           {error && <div className="error-message">{error}</div>}
           {success && <div className="success-message">{success}</div>}
 
           <button type="submit" className="btn-primary">
-            {isLogin ? 'Bejelentkezés' : 'Regisztráció'}
+            Bejelentkezés
           </button>
         </form>
 
-        <div className="toggle-auth">
-          <p>
-            {isLogin ? "Nincs még fiókod? " : 'Már van fiókod? '}
+        <div className="demo-section">
+          <p className="demo-title">Demo Fiókok (kattints az automatikus kitöltéshez):</p>
+          <div className="demo-buttons">
             <button
               type="button"
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setError('');
-                setSuccess('');
-              }}
-              className="toggle-btn"
+              onClick={() => setDemoCredentials(ROLES.EGYETEMISTA)}
+              className="demo-btn"
             >
-              {isLogin ? 'Regisztráció' : 'Bejelentkezés'}
+              Egyetemista
             </button>
-          </p>
-        </div>
-
-        {isLogin && (
-          <div className="demo-section">
-            <p className="demo-title">Demo Fiókok (kattints az automatikus kitöltéshez):</p>
-            <div className="demo-buttons">
-              <button
-                type="button"
-                onClick={() => setDemoCredentials(ROLES.EGYETEMISTA)}
-                className="demo-btn"
-              >
-                Egyetemista
-              </button>
-              <button
-                type="button"
-                onClick={() => setDemoCredentials(ROLES.KARBANTARTAS)}
-                className="demo-btn"
-              >
-                Karbantartó
-              </button>
-              <button
-                type="button"
-                onClick={() => setDemoCredentials(ROLES.KARBANTARTAS_VEZETO)}
-                className="demo-btn"
-              >
-                Vezető
-              </button>
-              <button
-                type="button"
-                onClick={() => setDemoCredentials(ROLES.ADMINISZTRATOR)}
-                className="demo-btn"
-              >
-                Admin
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setDemoCredentials(ROLES.KARBANTARTAS)}
+              className="demo-btn"
+            >
+              Karbantartó
+            </button>
+            <button
+              type="button"
+              onClick={() => setDemoCredentials(ROLES.KARBANTARTAS_VEZETO)}
+              className="demo-btn"
+            >
+              Vezető
+            </button>
+            <button
+              type="button"
+              onClick={() => setDemoCredentials(ROLES.ADMINISZTRATOR)}
+              className="demo-btn"
+            >
+              Admin
+            </button>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
