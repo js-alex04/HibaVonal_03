@@ -16,6 +16,8 @@ const KarbantartasVezetoDashboard = () => {
   const pendingRequests = toolRequests.filter(tr => tr.status === filterStatus);
   const unassignedTasks = tasks.filter(t => !t.assignedTo || t.status === 'pending');
   const lowStockEquipment = getLowStockEquipment();
+  const totalEquipmentItems = equipment.reduce((sum, eq) => sum + eq.quantity, 0);
+  const totalEquipmentTypes = equipment.length;
   
   const allTasks = tasks.filter(t => t.assignedTo);
   const filteredTasks = taskFilter === 'all' 
@@ -25,25 +27,25 @@ const KarbantartasVezetoDashboard = () => {
   const handleApprove = (requestId) => {
     try {
       approveToolRequest(requestId);
-      alert('Tool request approved!');
+      alert('Eszközigénylés jóváhagyva!');
     } catch (error) {
-      alert('Error: ' + error.message);
+      alert('Hiba: ' + error.message);
     }
   };
 
   const handleReject = (requestId) => {
     try {
       rejectToolRequest(requestId);
-      alert('Tool request rejected!');
+      alert('Eszközigénylés elutasítva!');
     } catch (error) {
-      alert('Error: ' + error.message);
+      alert('Hiba: ' + error.message);
     }
   };
 
   const handleCreateOrder = (e) => {
     e.preventDefault();
     if (!orderEquipmentName.trim() || orderQuantity < 1) {
-      alert('Please fill in all fields');
+      alert('Kérjük, töltsd ki az összes mezőt!');
       return;
     }
     createEquipmentOrder(orderEquipmentName, orderQuantity, orderReason);
@@ -51,7 +53,7 @@ const KarbantartasVezetoDashboard = () => {
     setOrderQuantity(1);
     setOrderReason('');
     setShowOrderForm(false);
-    alert('Order submitted to admin!');
+    alert('A megrendelés sikeresen továbbítva az Adminnak!');
   };
 
 
@@ -59,31 +61,31 @@ const KarbantartasVezetoDashboard = () => {
     <div className="role-dashboard">
       <div className="dashboard-grid-wide">
         <section className="section">
-          <h2>Manage Tool Requests</h2>
+          <h2>Eszközigénylések Kezelése</h2>
           <div className="filter-controls">
             <button
               className={`filter-btn ${filterStatus === 'pending' ? 'active' : ''}`}
               onClick={() => setFilterStatus('pending')}
             >
-              Pending
+              Függőben
             </button>
             <button
               className={`filter-btn ${filterStatus === 'approved' ? 'active' : ''}`}
               onClick={() => setFilterStatus('approved')}
             >
-              Approved
+              Jóváhagyva
             </button>
             <button
               className={`filter-btn ${filterStatus === 'rejected' ? 'active' : ''}`}
               onClick={() => setFilterStatus('rejected')}
             >
-              Rejected
+              Elutasítva
             </button>
           </div>
 
-          <div className="requests-list">
+          <div className="requests-list" style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '10px' }}>
             {pendingRequests.length === 0 ? (
-              <p className="empty-state">No {filterStatus} requests</p>
+              <p className="empty-state">Nincsenek igénylések ebben a státuszban</p>
             ) : (
               pendingRequests.map(req => {
                 const requester = users.find(u => u.id === req.requestedBy);
@@ -92,14 +94,14 @@ const KarbantartasVezetoDashboard = () => {
                     <div className="request-header">
                       <div>
                         <h4>{req.toolName}</h4>
-                        <p className="requester">Requested by: <strong>{requester?.name}</strong></p>
+                        <p className="requester">Kérte: <strong>{requester?.name}</strong></p>
                       </div>
                       <span className={`status-badge status-${req.status}`}>{req.status}</span>
                     </div>
 
                     <div className="request-details">
-                      <p><strong>Quantity:</strong> {req.quantity}</p>
-                      <p><strong>Reason:</strong> {req.reason}</p>
+                      <p><strong>Mennyiség:</strong> {req.quantity}</p>
+                      <p><strong>Indok:</strong> {req.reason}</p>
                       <small>{new Date(req.createdAt).toLocaleDateString()}</small>
                     </div>
 
@@ -109,13 +111,13 @@ const KarbantartasVezetoDashboard = () => {
                           className="btn-approve"
                           onClick={() => handleApprove(req.id)}
                         >
-                          Approve & Assign
+                          Jóváhagyás
                         </button>
                         <button
                           className="btn-reject"
                           onClick={() => handleReject(req.id)}
                         >
-                          Reject
+                          Elutasítás
                         </button>
                       </div>
                     )}
@@ -127,31 +129,48 @@ const KarbantartasVezetoDashboard = () => {
         </section>
 
         <section className="section">
-          <h2>Assign Maintenance Tasks</h2>
-          <div className="tasks-list">
+          <h2>Karbantartási Feladatok Kiosztása</h2>
+          <div className="tasks-list" style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '10px' }}>
             {unassignedTasks.length === 0 ? (
-              <p className="empty-state">No tasks waiting assignment</p>
+              <p className="empty-state">Nincs kiosztásra váró feladat</p>
             ) : (
               unassignedTasks.map(task => (
                 <div key={task.id} className="task-card">
                   <h4>{task.title}</h4>
                   <p>{task.description}</p>
-                  {task.location && <p><strong>Location:</strong> {task.location}</p>}
-                  {task.specialization && <p><strong>Specialist needed:</strong> {task.specialization}</p>}
+                  {task.location && <p><strong>Helyszín:</strong> {task.location}</p>}
+                  {task.specialization && <p><strong>Szükséges szakember:</strong> {task.specialization}</p>}
                   <div className="form-group">
-                    <label>Assign to worker</label>
+                    <label>Karbantartó Kijelölése</label>
                     <select
                       value={task.assignedTo || ''}
                       onChange={(e) => assignTask(task.id, e.target.value)}
                     >
-                      <option value="">-- choose --</option>
-                      {workers
-                        .filter(w => !task.specialization || w.specialization === task.specialization)
-                        .map(w => (
+                      <option value="">-- válassz --</option>
+                      {(!task.specialization || task.specialization === 'Egyéb') ? (
+                        workers.map(w => (
                           <option key={w.id} value={w.id}>
                             {w.name} {w.specialization ? `(${w.specialization})` : ''}
                           </option>
-                        ))}
+                        ))
+                      ) : (
+                        <>
+                          <optgroup label="Ajánlott (Megfelelő szakképesítés)">
+                            {workers.filter(w => w.specialization?.includes(task.specialization)).map(w => (
+                              <option key={w.id} value={w.id}>
+                                {w.name} {w.specialization ? `(${w.specialization})` : ''}
+                              </option>
+                            ))}
+                          </optgroup>
+                          <optgroup label="Egyéb karbantartók">
+                            {workers.filter(w => !w.specialization?.includes(task.specialization)).map(w => (
+                              <option key={w.id} value={w.id}>
+                                {w.name} {w.specialization ? `(${w.specialization})` : ''}
+                              </option>
+                            ))}
+                          </optgroup>
+                        </>
+                      )}
                     </select>
                   </div>
                 </div>
@@ -161,31 +180,31 @@ const KarbantartasVezetoDashboard = () => {
         </section>
 
         <section className="section">
-          <h2>Track Fault Repair Status</h2>
+          <h2>Hibajavítások Állapotának Követése</h2>
           <div className="filter-controls">
             <button
               className={`filter-btn ${taskFilter === 'all' ? 'active' : ''}`}
               onClick={() => setTaskFilter('all')}
             >
-              All
+              Összes
             </button>
             <button
               className={`filter-btn ${taskFilter === 'in_progress' ? 'active' : ''}`}
               onClick={() => setTaskFilter('in_progress')}
             >
-              In Progress
+              Folyamatban
             </button>
             <button
               className={`filter-btn ${taskFilter === 'completed' ? 'active' : ''}`}
               onClick={() => setTaskFilter('completed')}
             >
-              Completed
+              Kész
             </button>
           </div>
 
-          <div className="tasks-list">
+          <div className="tasks-list" style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '10px' }}>
             {filteredTasks.length === 0 ? (
-              <p className="empty-state">No {taskFilter === 'all' ? '' : taskFilter} tasks</p>
+              <p className="empty-state">Nincsenek feladatok ebben a kategóriában</p>
             ) : (
               filteredTasks.map(task => {
                 const assignee = users.find(u => u.id === task.assignedTo);
@@ -194,16 +213,23 @@ const KarbantartasVezetoDashboard = () => {
                     <div className="task-header">
                       <h4>{task.title}</h4>
                       <span className={`status-badge status-${task.completed ? 'completed' : task.status}`}>
-                        {task.completed ? 'Done' : 'In Progress'}
+                        {task.completed ? 'Kész' : 'Folyamatban'}
                       </span>
                     </div>
                     <p>{task.description}</p>
-                    {task.location && <p><strong>Location:</strong> {task.location}</p>}
-                    {assignee && <p><strong>Assigned to:</strong> {assignee.name}</p>}
+                    {task.location && <p><strong>Helyszín:</strong> {task.location}</p>}
+                    {assignee && <p><strong>Kiosztva:</strong> {assignee.name}</p>}
                     
+                    {task.feedback && (
+                      <div style={{ marginTop: '10px', padding: '8px', backgroundColor: '#f0f4f8', borderRadius: '4px', borderLeft: '4px solid #667eea' }}>
+                        <strong>Hallgató megjegyzése:</strong>
+                        <p style={{ margin: '4px 0 0 0', fontSize: '0.9em', fontStyle: 'italic' }}>"{task.feedback}"</p>
+                      </div>
+                    )}
+
                     <div className="completion-toggle">
                       <label className="toggle-label">
-                        <span>Mark as done:</span>
+                        <span>Készre jelentés:</span>
                         <div className="toggle-switch">
                           <input
                             type="checkbox"
@@ -215,7 +241,7 @@ const KarbantartasVezetoDashboard = () => {
                       </label>
                       {task.completed && task.completedAt && (
                         <small className="completion-date">
-                          Completed on: {new Date(task.completedAt).toLocaleDateString()}
+                          Befejezve: {new Date(task.completedAt).toLocaleDateString()}
                         </small>
                       )}
                     </div>
@@ -227,10 +253,10 @@ const KarbantartasVezetoDashboard = () => {
         </section>
 
         <section className="section">
-          <h2>My Team - Maintenance Workers</h2>
-          <div className="workers-list">
+          <h2>Csapatom - Karbantartók</h2>
+          <div className="workers-list" style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '10px' }}>
             {workers.length === 0 ? (
-              <p className="empty-state">No maintenance workers registered</p>
+              <p className="empty-state">Nincsenek karbantartók regisztrálva a rendszerben</p>
             ) : (
               workers.map(worker => {
                 const workerRequests = toolRequests.filter(tr => tr.requestedBy === worker.id);
@@ -240,8 +266,8 @@ const KarbantartasVezetoDashboard = () => {
                     <h4>{worker.name}</h4>
                     <p className="worker-email">{worker.email}</p>
                     <div className="worker-stats">
-                      <span>Total Requests: {workerRequests.length}</span>
-                      <span className="pending">Pending: {pendingReqs.length}</span>
+                      <span>Összes Igénylés: {workerRequests.length}</span>
+                      <span className="pending">Függőben: {pendingReqs.length}</span>
                     </div>
                   </div>
                 );
@@ -251,57 +277,58 @@ const KarbantartasVezetoDashboard = () => {
         </section>
 
         <section className="section">
-          <h2>Equipment Inventory - Low Stock</h2>
-          <div className="equipment-list">
+          <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '15px' }}>
+            <h2 style={{ margin: 0 }}>Eszközleltár - Alacsony Készlet</h2>
+            <div style={{ backgroundColor: '#edf2f7', padding: '8px 15px', borderRadius: '20px', fontSize: '0.95em', fontWeight: '600', color: '#4a5568' }}>
+              Jelenlegi teljes raktárkészlet: {totalEquipmentItems} db ({totalEquipmentTypes} fajta eszköz)
+            </div>
+          </div>
+          <div className="equipment-list" style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '10px' }}>
             {lowStockEquipment.length === 0 ? (
-              <p className="empty-state">All equipment is well stocked</p>
+              <p className="empty-state">Minden eszköz megfelelően fel van töltve</p>
             ) : (
               lowStockEquipment.map(eq => (
                 <div key={eq.id} className="equipment-card low-stock">
                   <div className="equipment-info">
                     <h4>{eq.name}</h4>
-                    <p>Current: <strong>{eq.quantity}</strong> / Minimum: {eq.minQuantity}</p>
-                    <span className="low-stock-badge">Low Stock!</span>
+                    <p>Jelenlegi: <strong>{eq.quantity}</strong> / Minimum: {eq.minQuantity}</p>
+                    <span className="low-stock-badge">Alacsony készlet!</span>
                   </div>
                 </div>
               ))
             )}
           </div>
           <button className="btn-add" onClick={() => setShowOrderForm(!showOrderForm)} style={{marginTop: '15px'}}>
-            {showOrderForm ? 'Cancel' : '+ Order from Admin'}
+            {showOrderForm ? 'Mégse' : '+ Rendelés leadása az Adminnak'}
           </button>
           
           {showOrderForm && (
             <form onSubmit={handleCreateOrder} className="form" style={{marginTop: '15px'}}>
               <div className="form-group">
-                <label>Equipment Name</label>
-                <input type="text" value={orderEquipmentName} onChange={(e) => setOrderEquipmentName(e.target.value)} placeholder="e.g., Drill, Hammer" required />
+                <label>Eszköz Neve</label>
+                <input type="text" value={orderEquipmentName} onChange={(e) => setOrderEquipmentName(e.target.value)} placeholder="pl. Fúrógép, Létra" required />
               </div>
               <div className="form-group">
-                <label>Quantity Needed</label>
+                <label>Szükséges Mennyiség</label>
                 <input type="number" value={orderQuantity} onChange={(e) => setOrderQuantity(e.target.value)} min="1" required />
               </div>
               <div className="form-group">
-                <label>Reason</label>
-                <input type="text" value={orderReason} onChange={(e) => setOrderReason(e.target.value)} placeholder="Why needed" />
+                <label>Indok</label>
+                <input type="text" value={orderReason} onChange={(e) => setOrderReason(e.target.value)} placeholder="Miért szükséges a megrendelés?" />
               </div>
-              <button type="submit" className="btn-primary">Submit Order</button>
+              <button type="submit" className="btn-primary">Rendelés Elküldése</button>
             </form>
           )}
         </section>
 
         <section className="section info-section">
-          <h3>Your Permissions</h3>
+          <h3>Jogosultságaid</h3>
           <ul className="permissions-list">
-            <li>View all maintenance tasks</li>
-            <li>Manage tool requests (approve/reject)</li>
-            <li>Assign tools to workers</li>
-            <li>View worker information</li>
-            <li>View reports and statistics</li>
-            <li>View low stock equipment</li>
-            <li>Order equipment from admin</li>
-            <li>Cannot manage user accounts</li>
-            <li>Cannot change system settings</li>
+            <li>Összes karbantartási feladat megtekintése</li>
+            <li>Eszközigénylések kezelése (jóváhagyás/elutasítás)</li>
+            <li>Hibák kiosztása a karbantartóknak</li>
+            <li>Alacsony raktárkészlet megtekintése</li>
+            <li>Új eszközök rendelése az Adminisztrátortól</li>
           </ul>
         </section>
       </div>
@@ -310,4 +337,3 @@ const KarbantartasVezetoDashboard = () => {
 };
 
 export default KarbantartasVezetoDashboard;
-

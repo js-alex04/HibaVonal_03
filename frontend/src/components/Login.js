@@ -10,47 +10,47 @@ const Login = () => {
   const [name, setName] = useState('');
   const [role, setRole] = useState(ROLES.EGYETEMISTA);
   const [specialization, setSpecialization] = useState('');
-  const SPECIALIZATIONS = ['Fűtés', 'Viz-Gáz', 'Villany', 'Egyéb'];
+  const SPECIALIZATIONS = ['Vízvezeték-szerelő', 'Villanyszerelő', 'Asztalos', 'Lakatos', 'Informatikus', 'Egyéb'];
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
 
     // Validate email
     if (!email || !validateEmail(email)) {
-      setError('Please enter a valid email address');
+      setError('Kérjük, adj meg egy érvényes e-mail címet!');
       return;
     }
 
     // Validate password length
     if (!password || password.length < 4) {
-      setError('Password must be at least 4 characters long');
+      setError('A jelszónak legalább 4 karakterből kell állnia!');
       return;
     }
 
     try {
       if (isLogin) {
-        login(email, password);
-        setSuccess('Login successful!');
+        await login(email, password);
+        setSuccess('Sikeres bejelentkezés!');
       } else {
         // Registration validation
         if (!name || name.trim().length === 0) {
-          setError('Please enter your name');
+          setError('Kérjük, add meg a nevedet!');
           return;
         }
 
         if (name.length < 2 || !/[a-zA-Z0-9]/.test(name)) {
-          setError('Name must be at least 2 characters long and include letters or numbers');
+          setError('A névnek legalább 2 karakternek kell lennie, és tartalmaznia kell betűket vagy számokat!');
           return;
         }
 
-        register(email, password, name.trim(), role, specialization);
-        setSuccess('Registration successful! Please login.');
+        await register(email, password, name.trim(), role, specialization);
+        setSuccess('Sikeres regisztráció! Kérlek, jelentkezz be.');
         setIsLogin(true);
         setEmail('');
         setPassword('');
@@ -75,7 +75,7 @@ const Login = () => {
 
   // Sanitize name - allowed letters, numbers, spaces, hyphens only
   const sanitizeName = (input) => {
-    return input.replace(/[^a-zA-Z0-9\s\-]/g, '');
+    return input.replace(/[^a-zA-Z0-9\s\-áéíóöőúüűÁÉÍÓÖŐÚÜŰ.,]/g, '');
   };
 
   // Demo credentials
@@ -96,58 +96,58 @@ const Login = () => {
   return (
     <div className="login-container">
       <div className="login-box">
-        <h1>Hibavonal Task Management</h1>
-        <p className="subtitle">Role-based Access Control System</p>
+        <h1>Hibavonal Feladatkezelő</h1>
+        <p className="subtitle">Szerepkör-alapú hozzáférés-kezelő rendszer</p>
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Email</label>
+            <label>E-mail cím</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(sanitizeEmail(e.target.value))}
-              placeholder="your@email.com"
+              placeholder="pelda@email.hu"
               required
             />
           </div>
 
           <div className="form-group">
-            <label>Password</label>
+            <label>Jelszó</label>
             <div className="password-input-wrapper">
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="e.g., Pass@123! or myP@ss"
+                placeholder="pl., Titkos@123! vagy Jelszo1"
                 required
               />
               <button
                 type="button"
                 className="toggle-password-btn"
                 onClick={() => setShowPassword(!showPassword)}
-                title={showPassword ? 'Hide password' : 'Show password'}
+                title={showPassword ? 'Jelszó elrejtése' : 'Jelszó mutatása'}
               >
-                {showPassword ? '🙈 Hide' : '👁️ Show'}
+                {showPassword ? '◡ Elrejtés' : '👁️ Mutatás'}
               </button>
             </div>
-            <small className="form-hint">Min 4 characters (special characters like !@#$%^&* allowed)</small>
+            <small className="form-hint">Minimum 4 karakter (speciális karakterek, pl. !@#$%^&* engedélyezettek)</small>
           </div>
 
           {!isLogin && (
             <>
               <div className="form-group">
-                <label>Name</label>
+                <label>Név</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(sanitizeName(e.target.value))}
-                  placeholder="e.g., John Doe"
+                  placeholder="pl., Kovács János"
                   required
                 />
               </div>
 
               <div className="form-group">
-                <label>Role</label>
+                <label>Szerepkör</label>
                 <select value={role} onChange={(e) => setRole(e.target.value)}>
                   <option value={ROLES.EGYETEMISTA}>{ROLES.EGYETEMISTA}</option>
                   <option value={ROLES.KARBANTARTAS}>{ROLES.KARBANTARTAS}</option>
@@ -157,9 +157,9 @@ const Login = () => {
               </div>
               {role === ROLES.KARBANTARTAS && (
                 <div className="form-group">
-                  <label>Specialization</label>
+                  <label>Szakterület</label>
                   <select value={specialization} onChange={(e) => setSpecialization(e.target.value)} required>
-                    <option value="">-- choose --</option>
+                    <option value="">-- válassz --</option>
                     {SPECIALIZATIONS.map(s => (
                       <option key={s} value={s}>{s}</option>
                     ))}
@@ -173,13 +173,13 @@ const Login = () => {
           {success && <div className="success-message">{success}</div>}
 
           <button type="submit" className="btn-primary">
-            {isLogin ? 'Login' : 'Register'}
+            {isLogin ? 'Bejelentkezés' : 'Regisztráció'}
           </button>
         </form>
 
         <div className="toggle-auth">
           <p>
-            {isLogin ? "Don't have an account? " : 'Already have an account? '}
+            {isLogin ? "Nincs még fiókod? " : 'Már van fiókod? '}
             <button
               type="button"
               onClick={() => {
@@ -189,14 +189,14 @@ const Login = () => {
               }}
               className="toggle-btn"
             >
-              {isLogin ? 'Register' : 'Login'}
+              {isLogin ? 'Regisztráció' : 'Bejelentkezés'}
             </button>
           </p>
         </div>
 
         {isLogin && (
           <div className="demo-section">
-            <p className="demo-title">Demo Accounts (click to autofill):</p>
+            <p className="demo-title">Demo Fiókok (kattints az automatikus kitöltéshez):</p>
             <div className="demo-buttons">
               <button
                 type="button"
