@@ -1,6 +1,7 @@
 ﻿using HibaVonal_03.DTOs;
 using HibaVonal_03.Entities;
 using HibaVonal_03.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,6 +9,7 @@ namespace HibaVonal_03.Controllers.MaintainerSpecialisation
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [Authorize]
     public class MaintainerSpecialisationController : ControllerBase
     {
         private readonly IMaintainerSpecialisationService _maintainerSpecialisationService;
@@ -19,6 +21,7 @@ namespace HibaVonal_03.Controllers.MaintainerSpecialisation
 
         // Create
         [HttpPost]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> CreateMaintainerSpecialisation([FromBody] MaintainerSpecialisationCreateDto body)
         {
             try
@@ -90,6 +93,7 @@ namespace HibaVonal_03.Controllers.MaintainerSpecialisation
 
         // Update
         [HttpPut("{maintainerSpecialisationId}")]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> UpdateMaintainerSpecialisation(int maintainerSpecialisationId, [FromBody] MaintainerSpecialisationUpdateDto body)
         {
             try
@@ -109,6 +113,7 @@ namespace HibaVonal_03.Controllers.MaintainerSpecialisation
 
         // Delete
         [HttpDelete("{maintainerSpecialisationId}")]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> DeleteMaintainerSpecialisation(int maintainerSpecialisationId)
         {
             try

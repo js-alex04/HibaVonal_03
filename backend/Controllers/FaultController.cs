@@ -4,11 +4,13 @@ using HibaVonal_03.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace HibaVonal_03.Controllers.Fault
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [Authorize]
     public class FaultController : ControllerBase
     {
         private readonly IFaultService _faultService;
@@ -20,13 +22,26 @@ namespace HibaVonal_03.Controllers.Fault
 
 
         //CRUD operations for Fault
+        [Authorize(Roles = "Collegiate")]
         [HttpPost("{collegiateId}")]
-        public async Task<ActionResult> CreateFault(int collegiateId, [FromBody] FaultCreateDto newFault)
+        public async Task<ActionResult> CreateFault([FromBody] FaultCreateDto newFault)
         {
             try
             {
-                var result = await _faultService.CreateFaultAsync(newFault, collegiateId);
+                var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (!int.TryParse(userIdString, out int loggedInCollegiateId))
+                {
+                    return Unauthorized("Érvénytelen felhasználói azonosító a tokenben.");
+                }
+
+                var result = await _faultService.CreateFaultAsync(newFault, loggedInCollegiateId);
+
                 return CreatedAtAction(nameof(GetFaultById), new { faultId = result.Id }, result);
+            }
+            catch (InvalidOperationException ex) 
+            {                
+                return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {
@@ -35,6 +50,7 @@ namespace HibaVonal_03.Controllers.Fault
         }
 
         [HttpGet]
+        [Authorize(Roles ="MaintenanceManager,Administrator")]
         public async Task<ActionResult> GetAllFaults()
         {
             try
@@ -67,6 +83,7 @@ namespace HibaVonal_03.Controllers.Fault
         }
 
         [HttpGet("{collegiateId}")]
+        [Authorize(Roles = "Collegiate,MaintenanceManager,Administrator")]
         public async Task<ActionResult> GetFaultsByCollegiateId(int collegiateId)
         {
             try
@@ -85,6 +102,7 @@ namespace HibaVonal_03.Controllers.Fault
         }
 
         [HttpGet("{maintainerId}")]
+        [Authorize(Roles = "MaintenanceManager,Maintainer")]
         public async Task<ActionResult> GetFaultsByMaintainerId( int maintainerId)
         {
             try
@@ -103,6 +121,7 @@ namespace HibaVonal_03.Controllers.Fault
         }
 
         [HttpGet("{status}")]
+        [Authorize(Roles = "MaintenanceManager,Administrator")]
         public async Task<ActionResult> GetFaultsByStatus(FaultStatus status)
         {
             try
@@ -117,6 +136,7 @@ namespace HibaVonal_03.Controllers.Fault
         }
 
         [HttpPut("{faultId}")]
+        [Authorize(Roles = "Collegiate,MaintenanceManager")]
         public async Task<ActionResult> UpdateFault(int faultId, [FromBody] FaultUpdateDto fault)
         {
             try
@@ -135,6 +155,7 @@ namespace HibaVonal_03.Controllers.Fault
         }
 
         [HttpPut("{faultId}/set-maintainer-specialisation")]
+        [Authorize(Roles = "MaintenanceManager")]
         public async Task<ActionResult> SetFaultSpecialisation(int faultId, int specialisationId)
         {
             try
@@ -153,6 +174,7 @@ namespace HibaVonal_03.Controllers.Fault
         }
 
         [HttpPut("{faultId}/assign-maintainer")]
+        [Authorize(Roles = "MaintenanceManager")]
         public async Task<ActionResult> AssignFaultMaintainer(int faultId, int maintainerId)
         {
             try
@@ -171,6 +193,7 @@ namespace HibaVonal_03.Controllers.Fault
         }
 
         [HttpPut("{faultId}/update-status")]
+        [Authorize(Roles = "MaintenanceManager,Maintainer")]
         public async Task<ActionResult> UpdateFaultStatusAsync(int faultId, FaultStatus status)
         {
             try
@@ -189,6 +212,7 @@ namespace HibaVonal_03.Controllers.Fault
         }
 
         [HttpDelete("{faultId}")]
+        [Authorize(Roles = "MaintenanceManager,Administrator")]
         public async Task<ActionResult> DeleteFault(int faultId)
         {
             try
@@ -208,6 +232,7 @@ namespace HibaVonal_03.Controllers.Fault
 
         //Specific operations for Fault
         [HttpPost("{faultId}/new-feedback")]
+        [Authorize(Roles = "Collegiate")]
         public async Task<ActionResult> NewFeedback(int faultId, [FromBody] FeedbackCreateDto dto)
         {
             try

@@ -1,5 +1,6 @@
 ﻿using HibaVonal_03.Context;
 using HibaVonal_03.Entities;
+using BCrypt.Net; // Ne felejtsd el az importot!
 
 namespace HibaVonal_03.Data
 {
@@ -16,13 +17,13 @@ namespace HibaVonal_03.Data
 
             // 1. Szakterületek
             var specialisations = new List<MaintainerSpecialisation>
-    {
-        new() { Name = "Vízvezeték-szerelő" },
-        new() { Name = "Villanyszerelő" },
-        new() { Name = "Asztalos" },
-        new() { Name = "Lakatos" },
-        new() { Name = "Informatikus" }
-    };
+            {
+                new() { Name = "Vízvezeték-szerelő" },
+                new() { Name = "Villanyszerelő" },
+                new() { Name = "Asztalos" },
+                new() { Name = "Lakatos" },
+                new() { Name = "Informatikus" }
+            };
             context.MaintainerSpecialisations.AddRange(specialisations);
             context.SaveChanges();
 
@@ -35,17 +36,22 @@ namespace HibaVonal_03.Data
             context.Premises.AddRange(premises);
             context.SaveChanges();
 
+            // JELSZÓ HASH GENERÁLÁSA (Egyszer, a ciklusok előtt a gyorsaság érdekében)
+            string defaultPasswordHash = BCrypt.Net.BCrypt.HashPassword("pass");
+
             // 3. Felhasználók
             var maintainers = new List<Maintainer>();
             for (int i = 1; i <= 5; i++)
             {
-                maintainers.Add(new Maintainer(0, $"Karbantartó {i}", $"szaki{i}@hibavonal.hu", "pass", true, new List<MaintainerSpecialisation> { specialisations[random.Next(specialisations.Count)] }));
+                // Itt már a generált defaultPasswordHash-t adjuk át a "pass" helyett
+                maintainers.Add(new Maintainer(0, $"Karbantartó {i}", $"szaki{i}@hibavonal.hu", defaultPasswordHash, true, new List<MaintainerSpecialisation> { specialisations[random.Next(specialisations.Count)] }));
             }
 
             var collegiates = new List<Collegiate>();
             for (int i = 1; i <= 30; i++)
             {
-                collegiates.Add(new Collegiate(0, $"Hallgató {i}", $"hallgato{i}@hibavonal.hu", "pass", premises[random.Next(premises.Count)]));
+                // Szintén a hash-t adjuk át
+                collegiates.Add(new Collegiate(0, $"Hallgató {i}", $"hallgato{i}@hibavonal.hu", defaultPasswordHash, premises[random.Next(premises.Count)]));
             }
 
             context.Maintainers.AddRange(maintainers);

@@ -1,5 +1,6 @@
 ﻿using HibaVonal_03.DTOs;
 using HibaVonal_03.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,6 +8,7 @@ namespace HibaVonal_03.Controllers.Premise
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [Authorize]
     public class PremiseController : ControllerBase
     {
         private readonly IPremiseService _premiseService;
@@ -18,6 +20,7 @@ namespace HibaVonal_03.Controllers.Premise
 
         // Create
         [HttpPost]
+        [Authorize(Roles ="Administrator")]
         public async Task<IActionResult> CreatePremise([FromBody] PremiseCreateDto body)
         {
             try
@@ -67,6 +70,7 @@ namespace HibaVonal_03.Controllers.Premise
 
         // Update
         [HttpPut("{premiseId}")]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> UpdatePremise(int premiseId, [FromBody] PremiseUpdateDto body)
         {
             try
@@ -86,6 +90,7 @@ namespace HibaVonal_03.Controllers.Premise
 
         // Delete
         [HttpDelete("{premiseId}")]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> DeletePremise(int premiseId)
         {
             try
@@ -105,6 +110,7 @@ namespace HibaVonal_03.Controllers.Premise
 
         // Specific operations
         [HttpPut("{premiseId}/add-appliance/{applianceId}")]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> AddApplianceToPremise(int premiseId, int applianceId)
         {
             try
@@ -123,6 +129,7 @@ namespace HibaVonal_03.Controllers.Premise
         }
 
         [HttpPut("{premiseId}/remove-appliance/{applianceId}")]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> DeleteApplianceFromPremise(int premiseId, int applianceId)
         {
             try

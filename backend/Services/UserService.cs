@@ -1,8 +1,13 @@
 ﻿using AutoMapper;
+using BCrypt.Net;
 using HibaVonal_03.DTOs;
 using HibaVonal_03.Entities;
 using HibaVonal_03.Interfaces;
 using HibaVonal_03.Repositories;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace HibaVonal_03.Services
 {
@@ -10,11 +15,13 @@ namespace HibaVonal_03.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IConfiguration _configuration;
 
-        public UserService(IUnitOfWork unitOfWork, IMapper mapper)
+        public UserService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _configuration = configuration;
         }
 
         public async Task<UserResponseDto> CreateAdministratorAsync(UserCreateDto dto)
@@ -57,13 +64,14 @@ namespace HibaVonal_03.Services
             if (await _unitOfWork.PremiseRepository.GetByIdAsync(dto.DormRoomId) == null)
                 throw new InvalidOperationException($"A {dto.DormRoomId} azonosítójú szoba nem található.");
 
+            // 3. Jelszó
+            dto.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
-            // 3. Mapelés és adatok beállítása
+            // 4. Mapelés és adatok beállítása
             var collegiate = _mapper.Map<Collegiate>(dto);
             collegiate.Role = Role.Collegiate;
 
-            // 4. Jelszó
-            collegiate.Password = dto.Password;
+           
 
             await _unitOfWork.UserRepository.AddAsync(collegiate);
             await _unitOfWork.SaveChangesAsync();
@@ -125,10 +133,37 @@ namespace HibaVonal_03.Services
                 u => u.Email == request.Email)).FirstOrDefault()
                 ?? throw new InvalidOperationException("Érvénytelen email cím vagy jelszó.");
 
-            if (user.Password != request.Password)
+            if (!BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
                 throw new InvalidOperationException("Érvénytelen email cím vagy jelszó.");
 
-            return _mapper.Map<UserResponseDto>(user);
+            // JWT token generálása
+            var tokenHandler = new JwtSecurityTokenHandler();
+
+            // Kiolvassuk az appsettings.json-ből a beállításokat
+            var jwtSettings = _configuration.GetSection("JwtSettings");
+            var key = Encoding.ASCII.GetBytes(jwtSettings["Secret"]);
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[]
+                {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Email, user.Email), // Itt adjuk át az emailt is, hogy a tokenből elérhető legyen
+                new Claim(ClaimTypes.Role, user.Role.ToString()) // Itt adjuk át a szerepkört
+            }),
+                Expires = DateTime.UtcNow.AddMinutes(double.Parse(jwtSettings["ExpirationInMinutes"])),
+                Issuer = jwtSettings["Issuer"],
+                Audience = jwtSettings["Audience"],
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+
+            var response = _mapper.Map<UserResponseDto>(user);
+            // Hozzáadjuk a token string-et a DTO-hoz (ne felejtsd el beletenni a Token property-t a UserResponseDto-ba!)
+            response.Token = tokenHandler.WriteToken(token);
+
+            return response;
         }
 
         public async Task<UserResponseDto> UpdateUserProfileAsync(int userId, UserUpdateDto dto)

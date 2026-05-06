@@ -1,11 +1,13 @@
 ﻿using HibaVonal_03.DTOs;
 using HibaVonal_03.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HibaVonal_03.Controllers.Feedback
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [Authorize]
     public class FeedbackController : ControllerBase
     {
         private readonly IFeedbackService _feedbackService;
@@ -16,6 +18,7 @@ namespace HibaVonal_03.Controllers.Feedback
         }
 
         [HttpGet]
+        [Authorize(Roles = "MaintenanceManager,Administrator")]
         public async Task<ActionResult> GetAllFeedbacks()
         {
             try
@@ -30,6 +33,7 @@ namespace HibaVonal_03.Controllers.Feedback
         }
 
         [HttpGet("{feedbackId}")]
+        [Authorize(Roles = "MaintenanceManager,Administrator")]
         public async Task<ActionResult> GetFeedbackById(int feedbackId)
         {
             try
@@ -48,6 +52,7 @@ namespace HibaVonal_03.Controllers.Feedback
         }
 
         [HttpPut("{feedbackId}")]
+        [Authorize(Roles = "Collegiate")]
         public async Task<ActionResult> UpdateFeedback(int feedbackId, [FromBody] FeedbackUpdateDto feedback)
         {
             try
@@ -66,6 +71,7 @@ namespace HibaVonal_03.Controllers.Feedback
         }
 
         [HttpDelete("{feedbackId}")]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult> DeleteFeedback(int feedbackId)
         {
             try

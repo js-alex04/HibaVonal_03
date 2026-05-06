@@ -1,5 +1,6 @@
 ﻿using HibaVonal_03.DTOs;
 using HibaVonal_03.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,6 +8,7 @@ namespace HibaVonal_03.Controllers.Appliance
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [Authorize]
     public class ApplianceController : ControllerBase
     {
         private readonly IApplianceService _applianceService;
@@ -18,6 +20,7 @@ namespace HibaVonal_03.Controllers.Appliance
 
         // Create
         [HttpPost]
+        [Authorize(Roles ="Administrator")]
         public async Task<IActionResult> CreateAppliance([FromBody] ApplianceCreateDto body)
         {
             try
@@ -71,6 +74,7 @@ namespace HibaVonal_03.Controllers.Appliance
 
         // Update
         [HttpPut("{applianceId}")]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> UpdateAppliance(int applianceId, [FromBody] ApplianceUpdateDto body)
         {
             try
@@ -90,6 +94,7 @@ namespace HibaVonal_03.Controllers.Appliance
 
         // Delete
         [HttpDelete("{applianceId}")]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> DeleteAppliance(int applianceId)
         {
             try

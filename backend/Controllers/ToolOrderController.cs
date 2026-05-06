@@ -1,6 +1,7 @@
 ﻿using HibaVonal_03.DTOs;
 using HibaVonal_03.Interfaces;
 using HibaVonal_03.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +10,7 @@ namespace HibaVonal_03.Controllers.ToolOrder
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [Authorize]
     public class ToolOrderController : ControllerBase
     {
         private readonly IToolOrderService _toolOrderService;
@@ -20,6 +22,7 @@ namespace HibaVonal_03.Controllers.ToolOrder
 
         // Create
         [HttpPost("{faultId}")]
+        [Authorize(Roles = "MaintenanceManager,Maintainer")]
         public async Task<IActionResult> CreateToolOrder(int faultId, [FromBody] ToolOrderCreateDto body)
         {
             try
@@ -38,6 +41,7 @@ namespace HibaVonal_03.Controllers.ToolOrder
         }
 
         [HttpGet]
+        [Authorize(Roles = "MaintenanceManager,Administrator")]
         public async Task<IActionResult> GetAllToolOrders()
         {
             try
@@ -52,6 +56,7 @@ namespace HibaVonal_03.Controllers.ToolOrder
         }
 
         [HttpGet("{toolOrderId}")]
+        [Authorize(Roles = "MaintenanceManager,Administrator")]
         public async Task<IActionResult> GetToolOrderById(int toolOrderId)
         {
             try
@@ -70,6 +75,7 @@ namespace HibaVonal_03.Controllers.ToolOrder
         }
 
         [HttpGet("fault/{faultId}")]
+        [Authorize(Roles = "MaintenanceManager,Administrator")]
         public async Task<IActionResult> GetToolOrdersByFaultId(int faultId)
         {
             try
@@ -88,6 +94,7 @@ namespace HibaVonal_03.Controllers.ToolOrder
         }
 
         [HttpGet("pending")]
+        [Authorize(Roles = "MaintenanceManager,Administrator")]
         public async Task<IActionResult> GetPendingToolOrders()
         {
             try
@@ -102,6 +109,7 @@ namespace HibaVonal_03.Controllers.ToolOrder
         }
 
         [HttpPut("{toolOrderId}")]
+        [Authorize(Roles = "MaintenanceManager")]
         public async Task<IActionResult> UpdateToolOrder(int toolOrderId, [FromBody] ToolOrderUpdateDto body)
         {
             try
@@ -120,6 +128,7 @@ namespace HibaVonal_03.Controllers.ToolOrder
         }
 
         [HttpPut("{toolOrderId}/delivery-status")]
+        [Authorize(Roles = "MaintenanceManager")]
         public async Task<IActionResult> UpdateDeliveryStatus(int toolOrderId, bool isDelivered)
         {
             try
@@ -142,6 +151,7 @@ namespace HibaVonal_03.Controllers.ToolOrder
         }
 
         [HttpDelete("{toolOrderId}")]
+        [Authorize(Roles = "MaintenanceManager")]
         public async Task<IActionResult> DeleteToolOrder(int toolOrderId)
         {
             try

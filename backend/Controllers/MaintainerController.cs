@@ -6,6 +6,7 @@ namespace HibaVonal_03.Controllers.Maintainer
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [Authorize]
     public class MaintainerController : ControllerBase
     {
         private readonly IMaintainerService _maintainerService;
@@ -17,6 +18,7 @@ namespace HibaVonal_03.Controllers.Maintainer
 
         // Összes karbantartó listázása
         [HttpGet]
+        [Authorize(Roles = "MaintenanceManager,Administrator")]
         public async Task<IActionResult> GetAllMaintainers()
         {
             try
@@ -32,6 +34,7 @@ namespace HibaVonal_03.Controllers.Maintainer
 
         // Egy adott karbantartó lekérése ID alapján
         [HttpGet("{maintainerId}")]
+        [Authorize(Roles = "MaintenanceManager,Administrator")]
         public async Task<IActionResult> GetMaintainerById(int maintainerId)
         {
             try
@@ -51,6 +54,7 @@ namespace HibaVonal_03.Controllers.Maintainer
 
         // Karbantartók szűrése szakterület (Specialisation) alapján
         [HttpGet("{specialisationId}")]
+        [Authorize(Roles = "MaintenanceManager,Administrator")]
         public async Task<IActionResult> GetMaintainersBySpecialisationId(int specialisationId)
         {
             try
@@ -66,6 +70,7 @@ namespace HibaVonal_03.Controllers.Maintainer
 
         // Elérhetőség (betegség, szabadság stb.) módosítása
         [HttpPut("{maintainerId}")]
+        [Authorize(Roles = "MaintenanceManager,Maintainer")]
         public async Task<IActionResult> UpdateAvailability(int maintainerId, [FromQuery] bool isAvailable)
         {
             try

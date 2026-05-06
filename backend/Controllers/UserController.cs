@@ -8,6 +8,7 @@ namespace HibaVonal_03.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [Authorize]
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
@@ -18,6 +19,7 @@ namespace HibaVonal_03.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> CreateAdministrator([FromBody] UserCreateDto body)
         {
             try
@@ -36,6 +38,7 @@ namespace HibaVonal_03.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> CreateMaintenanceManager([FromBody] UserCreateDto body)
         {
             try
@@ -54,6 +57,7 @@ namespace HibaVonal_03.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> CreateCollegiate([FromBody] CollegiateCreateDto body)
         {
             try
@@ -72,6 +76,7 @@ namespace HibaVonal_03.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> CreateMaintainer([FromBody] MaintainerCreateDto body)
         {
             try
@@ -90,6 +95,7 @@ namespace HibaVonal_03.Controllers
         }
 
         [HttpGet]
+        
         public async Task<IActionResult> GetAllUsers()
         {
             try
@@ -123,6 +129,7 @@ namespace HibaVonal_03.Controllers
 
         // Auth
         [HttpPost]
+        [AllowAnonymous]
         public async Task<ActionResult<UserResponseDto>> Login([FromBody] UserLoginRequestDto request)
         {
             try
@@ -142,6 +149,7 @@ namespace HibaVonal_03.Controllers
         }
 
         [HttpPut("{userId}/profile")]
+        [Authorize]
         public async Task<IActionResult> UpdateUserProfile(int userId, [FromBody] UserUpdateDto body)
         {
             try
@@ -160,6 +168,7 @@ namespace HibaVonal_03.Controllers
         }
 
         [HttpPut("{userId}/change-password")]
+        [Authorize]
         public async Task<IActionResult> ChangePassword(int userId, [FromBody] ChangePasswordDto body)
         {
             try
@@ -182,6 +191,7 @@ namespace HibaVonal_03.Controllers
         }
 
         [HttpPut("{userId}/change-role")]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> ChangeUserRole(int userId, Role newRole)
         {
             try
@@ -204,6 +214,7 @@ namespace HibaVonal_03.Controllers
         }
 
         [HttpDelete("{userId}/delete")]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> DeleteUser(int userId)
         {
             try

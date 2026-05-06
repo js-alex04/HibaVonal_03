@@ -1,11 +1,16 @@
 using AutoMapper;
+using Microsoft.OpenApi;
+using Microsoft.Extensions.DependencyInjection;
 using HibaVonal_03.Context;
 using HibaVonal_03.DTOs;
 using HibaVonal_03.Interfaces;
 using HibaVonal_03.Profiles;
 using HibaVonal_03.Repositories;
 using HibaVonal_03.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 
@@ -16,6 +21,10 @@ namespace HibaVonal_03
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            // 1. JWT beállítások beolvasása az appsettings.json-ből
+            var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+            var secretKey = Encoding.ASCII.GetBytes(jwtSettings["Secret"]!);
 
             // Add services to the container.
 
@@ -62,8 +71,31 @@ namespace HibaVonal_03
                 };
             });
 
+            // 2. Authentication (Hitelesítés) szolgáltatás regisztrálása
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.RequireHttpsMetadata = false; // Fejlesztésnél lehet false
+                options.SaveToken = true;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(secretKey),
+                    ValidateIssuer = true,
+                    ValidIssuer = jwtSettings["Issuer"],
+                    ValidateAudience = true,
+                    ValidAudience = jwtSettings["Audience"],
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero // Ne adjon extra időt a lejárathoz
+                };
+            });
+
             builder.Services.AddEndpointsApiExplorer(); // Ez segít a Swaggernek feltérképezni a végpontokat
-            builder.Services.AddSwaggerGen();           // Ez generálja a Swagger dokumentációt
+            builder.Services.AddSwaggerGen();
 
             // React frontend build folder configuration
             builder.Services.AddCors(options =>
@@ -118,6 +150,10 @@ namespace HibaVonal_03
 
             var app = builder.Build();
 
+            
+
+            
+
             //AI által generált kód: Adatbázis feltöltése (seeding) a program indításakor
             using (var scope = app.Services.CreateScope())
             {
@@ -148,7 +184,9 @@ namespace HibaVonal_03
             // Enable CORS for the React frontend
             app.UseCors("AllowReactApp");
 
-            app.UseAuthorization();
+            app.UseAuthentication(); // 1. Hitelesítés
+
+            app.UseAuthorization();  // 2. Jogosultság
 
             app.MapControllers();
 
