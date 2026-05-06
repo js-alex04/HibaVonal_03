@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HibaVonal_03.Migrations
 {
     [DbContext(typeof(HibaVonalDbContext))]
-    [Migration("20260505203211_InitialCreate")]
+    [Migration("20260506231545_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -291,7 +291,8 @@ namespace HibaVonal_03.Migrations
                 {
                     b.HasOne("HibaVonal_03.Entities.Appliance", "Appliance")
                         .WithMany("Faults")
-                        .HasForeignKey("ApplianceId");
+                        .HasForeignKey("ApplianceId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("HibaVonal_03.Entities.Maintainer", "AssignedMaintenance")
                         .WithMany("AssignedFaults")

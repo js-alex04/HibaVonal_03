@@ -105,7 +105,8 @@ namespace HibaVonal_03.Migrations
                         name: "FK_Faults_Appliances_ApplianceId",
                         column: x => x.ApplianceId,
                         principalTable: "Appliances",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Faults_MaintainerSpecialisations_SpecializationId",
                         column: x => x.SpecializationId,

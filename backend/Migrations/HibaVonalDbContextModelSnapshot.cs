@@ -288,7 +288,8 @@ namespace HibaVonal_03.Migrations
                 {
                     b.HasOne("HibaVonal_03.Entities.Appliance", "Appliance")
                         .WithMany("Faults")
-                        .HasForeignKey("ApplianceId");
+                        .HasForeignKey("ApplianceId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("HibaVonal_03.Entities.Maintainer", "AssignedMaintenance")
                         .WithMany("AssignedFaults")

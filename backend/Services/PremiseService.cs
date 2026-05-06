@@ -82,8 +82,17 @@ namespace HibaVonal_03.Services
         public async Task DeletePremiseAsync(int premiseId)
         {
             // 1. lépés: Lekérjük a törlendő helyiséget az adatbázisból az ID alapján
-            var premiseToDelete = await _unitOfWork.PremiseRepository.GetByIdAsync(premiseId)
+            var premiseToDelete = await _unitOfWork.PremiseRepository.GetQueryable()
+                .Include(p => p.Residents)
+                .Include(p => p.Appliances)
+                .FirstOrDefaultAsync(p => p.Id == premiseId)
                 ?? throw new KeyNotFoundException($"A helyiség a megadott azonosítóval ({premiseId}) nem található.");
+
+            if (premiseToDelete.Residents != null && premiseToDelete.Residents.Any())
+            {
+                throw new InvalidOperationException(
+                    $"A helyiség nem törölhető, mert {premiseToDelete.Residents.Count} lakó van hozzárendelve. Előbb költöztesse át őket!");
+            }
 
             // 2. lépés: Töröljük a helyiséget az adatbázisból
             _unitOfWork.PremiseRepository.Delete(premiseToDelete);

@@ -33,7 +33,8 @@ namespace HibaVonal_03.Context
             modelBuilder.Entity<Fault>()
                 .HasOne<Appliance>(f => f.Appliance) // egy hiba egy berendezéshez tartozik
                 .WithMany(a => a.Faults) // egy berendezéshez több hiba is tartozhat
-                .HasForeignKey(f => f.ApplianceId); // a kulcs a két tábla között
+                .HasForeignKey(f => f.ApplianceId) // a kulcs a két tábla között
+                .OnDelete(DeleteBehavior.Cascade); // ha egy berendezés törlésre kerül, a hozzá tartozó hibák is törlődnek (az adatintegritás megőrzése érdekében, mivel egy hiba nem létezhet kapcsolódó berendezés nélkül)
 
             // A Hiba és a Kollégista közötti kapcsolat (egy-a-sokhoz)
             modelBuilder.Entity<Fault>()
