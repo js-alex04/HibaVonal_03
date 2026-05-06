@@ -1,20 +1,18 @@
-﻿using HibaVonal_03.DTOs.ToolOrder;
+﻿using HibaVonal_03.DTOs;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
-namespace HibaVonal_03.Interfaces.ToolOrder
+namespace HibaVonal_03.Interfaces
 {
     public interface IToolOrderService
     {
-        // CRUD operations for ToolOrder
-        Task<ToolOrderResponseDto> CreateToolOrderAsync(ToolOrderCreateDto toolOrder);
+        Task<ToolOrderResponseDto> CreateToolOrderAsync(int faultId, ToolOrderCreateDto toolOrder); // Rendelés leadása egy konkrét hibához
         Task<List<ToolOrderResponseDto>> GetAllToolOrdersAsync();
-        Task<ToolOrderResponseDto> GetToolOrderByIdAsync(int id);
-        Task<bool> UpdateToolOrderAsync(int id, ToolOrderUpdateDto toolOrder);
-        Task<bool> DeleteToolOrderAsync(int id);
-
-
-        // Specific operations for ToolOrder
-        Task<bool> UpdateDeliveryStatusAsync(int id, bool isDelivered);
-        Task<List<ToolOrderResponseDto>> GetToolOrdersByFaultIdAsync(int faultId);
-        Task<List<ToolOrderResponseDto>> GetPendingOrdersAsync();
+        Task<ToolOrderResponseDto> GetToolOrderByIdAsync(int toolOrderId);
+        Task<List<ToolOrderResponseDto>> GetToolOrdersByFaultIdAsync(int faultId); // Egy adott hibához tartozó összes alkatrész
+        Task<List<ToolOrderResponseDto>> GetPendingToolOrdersAsync(); // Még meg nem érkezett (függőben lévő) rendelések listája
+        Task<ToolOrderResponseDto> UpdateToolOrderAsync(int toolOrderId, ToolOrderUpdateDto toolOrder); // Rendelés adatainak (pl. mennyiség) módosítása
+        Task<ToolOrderResponseDto> UpdateDeliveryStatusAsync(int toolOrderId, bool isDelivered); // Kiszállítási státusz (megérkezett/nem) frissítése
+        Task DeleteToolOrderAsync(int toolOrderId); // Téves rendelés törlése
     }
 }

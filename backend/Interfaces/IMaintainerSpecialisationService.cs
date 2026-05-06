@@ -1,17 +1,16 @@
-﻿using HibaVonal_03.DTOs.MaintainerSpecialisation;
+﻿using HibaVonal_03.DTOs;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace HibaVonal_03.Interfaces.MaintainerSpecialisation
+namespace HibaVonal_03.Interfaces
 {
     public interface IMaintainerSpecialisationService
     {
-        // CRUD négy alapművelet a MaintainerSpecialisation entitásra vonatkozóan
         Task<MaintainerSpecialisationResponseDto> CreateMaintainerSpecialisationAsync(MaintainerSpecialisationCreateDto maintainerSpecialisation);
         Task<List<MaintainerSpecialisationResponseDto>> GetAllMaintainerSpecialisationsAsync();
-        Task<MaintainerSpecialisationResponseDto> GetMaintainerSpecialisationByIdAsync(int id);
-        Task<List<MaintainerSpecialisationResponseDto>> GetSpecialisationsByMaintainerIdAsync(int maintainerId);
-        Task<bool> UpdateMaintainerSpecialisationAsync(int id, MaintainerSpecialisationUpdateDto maintainerSpecialisation);
-        Task<bool> DeleteMaintainerSpecialisationAsync(int id);
+        Task<MaintainerSpecialisationResponseDto> GetMaintainerSpecialisationByIdAsync(int maintainerSpecialisationId);
+        Task<List<MaintainerSpecialisationResponseDto>> GetSpecialisationsByMaintainerIdAsync(int maintainerId); // Mikhez ért egy adott szakember?
+        Task<MaintainerSpecialisationResponseDto> UpdateMaintainerSpecialisationAsync(int maintainerSpecialisationId, MaintainerSpecialisationUpdateDto maintainerSpecialisation);
+        Task DeleteMaintainerSpecialisationAsync(int maintainerSpecialisationId);
     }
 }

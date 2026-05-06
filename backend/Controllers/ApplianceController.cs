@@ -1,5 +1,6 @@
-﻿using HibaVonal_03.DTOs.Appliance;
-using HibaVonal_03.Interfaces.Appliance;
+﻿using HibaVonal_03.DTOs;
+using HibaVonal_03.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,6 +8,7 @@ namespace HibaVonal_03.Controllers.Appliance
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [Authorize]
     public class ApplianceController : ControllerBase
     {
         private readonly IApplianceService _applianceService;
@@ -16,70 +18,97 @@ namespace HibaVonal_03.Controllers.Appliance
             _applianceService = applianceService;
         }
 
-        // CRUD négy alapművelet a Appliance entitásra
         // Create
         [HttpPost]
+        [Authorize(Roles ="Administrator")]
         public async Task<IActionResult> CreateAppliance([FromBody] ApplianceCreateDto body)
         {
-            var result = await _applianceService.CreateApplianceAsync(body);
-
-            return CreatedAtAction(nameof(GetApplianceById), new { id = result.Id }, result);
+            try
+            {
+                var result = await _applianceService.CreateApplianceAsync(body);
+                return CreatedAtAction(nameof(GetApplianceById), new { id = result.Id }, result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex);
+            }
         }
 
         // Read
         [HttpGet]
         public async Task<IActionResult> GetAllAppliances()
         {
-            var result = await _applianceService.GetAllAppliancesAsync();
-
-            return Ok(result);
+            try
+            {
+                var result = await _applianceService.GetAllAppliancesAsync();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // Read by ID
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetApplianceById(int id)
+        [HttpGet("{applianceId}")]
+        public async Task<IActionResult> GetApplianceById(int applianceId)
         {
-            var result = await _applianceService.GetApplianceByIdAsync(id);
-
-            if (result is null)
+            try
             {
-                return NotFound();
-            }
-            else
-            {
+                var result = await _applianceService.GetApplianceByIdAsync(applianceId);
                 return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
             }
         }
 
         // Update
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateAppliance(int id, [FromBody] ApplianceUpdateDto body)
+        [HttpPut("{applianceId}")]
+        [Authorize(Roles = "Administrator")]
+        public async Task<IActionResult> UpdateAppliance(int applianceId, [FromBody] ApplianceUpdateDto body)
         {
-            var result = await _applianceService.UpdateApplianceAsync(id, body);
-
-            if (result)
+            try
             {
-                return NoContent();
+                var result = await _applianceService.UpdateApplianceAsync(applianceId, body);
+                return Ok(result);
             }
-            else
+            catch (KeyNotFoundException ex)
             {
-                return NotFound();
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
             }
         }
 
         // Delete
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteAppliance(int id)
+        [HttpDelete("{applianceId}")]
+        [Authorize(Roles = "Administrator")]
+        public async Task<IActionResult> DeleteAppliance(int applianceId)
         {
-            var result = await _applianceService.DeleteApplianceAsync(id);
-
-            if (result)
+            try
             {
+                await _applianceService.DeleteApplianceAsync(applianceId);
                 return NoContent();
             }
-            else
+            catch (KeyNotFoundException ex)
             {
-                return NotFound();
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
             }
         }
     }

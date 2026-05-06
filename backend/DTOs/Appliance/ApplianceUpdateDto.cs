@@ -1,4 +1,4 @@
-﻿namespace HibaVonal_03.DTOs.Appliance
+﻿namespace HibaVonal_03.DTOs
 {
     public class ApplianceUpdateDto
     {

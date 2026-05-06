@@ -1,12 +1,12 @@
-﻿using HibaVonal_03.DTOs.Feedback;
+﻿using HibaVonal_03.DTOs;
 
-namespace HibaVonal_03.Interfaces.Feedback
+namespace HibaVonal_03.Interfaces
 {
     public interface IFeedbackService
     {
         Task<List<FeedbackResponseDto>> GetAllFeedbacksAsync();
-        Task<FeedbackResponseDto> GetFeedbackByIdAsync(int feedbackId);
-        Task<bool> UpdateFeedback(int feedbackId, FeedbackUpdateDto feedback);
-        Task<bool> DeleteFeedback(int feedbackId);
+        Task<FeedbackResponseDto?> GetFeedbackByIdAsync(int feedbackId);
+        Task<FeedbackResponseDto> UpdateFeedbackAsync(int feedbackId, FeedbackUpdateDto feedback);
+        Task DeleteFeedbackAsync(int feedbackId);
     }
 }

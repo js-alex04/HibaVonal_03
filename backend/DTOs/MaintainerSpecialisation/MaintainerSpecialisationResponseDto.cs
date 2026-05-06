@@ -1,4 +1,4 @@
-﻿namespace HibaVonal_03.DTOs.MaintainerSpecialisation
+﻿namespace HibaVonal_03.DTOs
 {
     public class MaintainerSpecialisationResponseDto
     {

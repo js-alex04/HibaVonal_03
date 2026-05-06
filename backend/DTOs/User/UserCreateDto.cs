@@ -1,4 +1,4 @@
-﻿namespace HibaVonal_03.DTOs.User
+﻿namespace HibaVonal_03.DTOs
 {
     public class UserCreateDto
     {

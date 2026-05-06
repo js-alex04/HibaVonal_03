@@ -1,4 +1,4 @@
-﻿namespace HibaVonal_03.DTOs.ToolOrder
+﻿namespace HibaVonal_03.DTOs
 {
     public class ToolOrderUpdateDto
     {

@@ -1,17 +1,15 @@
-﻿using HibaVonal_03.DTOs.Premise;
+﻿using HibaVonal_03.DTOs;
 
-namespace HibaVonal_03.Interfaces.Premise
+namespace HibaVonal_03.Interfaces
 {
     public interface IPremiseService
     {
-        // CRUD négy alapművelet a Premise entitásra vonatkozóan
         Task<PremiseResponseDto> CreatePremiseAsync(PremiseCreateDto premise);
         Task<List<PremiseResponseDto>> GetAllPremisesAsync();
-        Task<PremiseResponseDto> GetPremiseByIdAsync(int id);
-        Task<bool> UpdatePremiseAsync(int id, PremiseUpdateDto premise);
-        Task<bool> DeletePremiseAsync(int id);
-
-        Task<bool> AddApplianceToPremiseAsync(int premiseId, int applianceId);
-        Task<bool> DeleteApplianceFromPremiseAsync(int premiseId, int applianceId);
+        Task<PremiseResponseDto> GetPremiseByIdAsync(int premiseId);
+        Task<PremiseResponseDto> UpdatePremiseAsync(int premiseId, PremiseUpdateDto premise);
+        Task DeletePremiseAsync(int premiseId);
+        Task<PremiseResponseDto> AddApplianceToPremiseAsync(int premiseId, int applianceId); // Berendezés (pl. mosógép) hozzárendelése a szobához
+        Task DeleteApplianceFromPremiseAsync(int premiseId, int applianceId); // Berendezés eltávolítása a szobából
     }
 }

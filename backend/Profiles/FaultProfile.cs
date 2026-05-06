@@ -1,4 +1,4 @@
-﻿using HibaVonal_03.DTOs.Fault;
+﻿using HibaVonal_03.DTOs;
 using HibaVonal_03.Entities;
 using AutoMapper;
 

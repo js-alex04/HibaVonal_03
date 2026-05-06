@@ -1,10 +1,10 @@
 ﻿using AutoMapper;
-using HibaVonal_03.DTOs.Auth;
+using HibaVonal_03.DTOs;
 using HibaVonal_03.Entities;
-using HibaVonal_03.Interfaces.Maintainer;
+using HibaVonal_03.Interfaces;
 using HibaVonal_03.Repositories;
 
-namespace HibaVonal_03.Services.Maintainer
+namespace HibaVonal_03.Services
 {
     public class MaintainerService : IMaintainerService
     {
@@ -17,67 +17,44 @@ namespace HibaVonal_03.Services.Maintainer
             _mapper = mapper;
         }
 
-        public async Task<List<UserDto>> GetAllMaintainersAsync()
+        public async Task<List<MaintainerResponseDto>> GetAllMaintainersAsync()
         {
-            var allUsers = await _unitOfWork.UserRepository.GetAsync(
-                filter: null,
-                includeProperties: "MaintenanceSpecialisation"
+            var maintainers = await _unitOfWork.MaintainerRepository.GetAsync(null, "MaintenanceSpecialisation");
+
+            return _mapper.Map<List<MaintainerResponseDto>>(maintainers);
+        }
+
+        public async Task<MaintainerResponseDto> GetMaintainerByIdAsync(int maintainerId)
+        {
+            var maintainer = await _unitOfWork.MaintainerRepository.GetByIdAsync(maintainerId, "MaintenanceSpecialisation")
+                ?? throw new KeyNotFoundException($"A karbantartó a megadott azonosítóval ({maintainerId}) nem található.");
+
+            return _mapper.Map<MaintainerResponseDto>(maintainer);
+        }
+
+        public async Task<List<MaintainerResponseDto>> GetMaintainersBySpecialisationIdAsync(int specialisationId)
+        {
+            var maintainers = await _unitOfWork.MaintainerRepository.GetAsync(
+                m => m.MaintenanceSpecialisation.Any(s => s.Id == specialisationId),
+                "MaintenanceSpecialisation"
             );
 
-            // Csak azokat tartjuk meg, akik Karbantartók
-            var maintainers = allUsers.Where(u => u.Role == Role.Maintainer).ToList();
-
-            return _mapper.Map<List<UserDto>>(maintainers);
+            return _mapper.Map<List<MaintainerResponseDto>>(maintainers);
         }
 
-        public async Task<UserDto?> GetMaintainerByIdAsync(int maintainerId)
+        public async Task<MaintainerResponseDto> UpdateAvailabilityAsync(int maintainerId, bool isAvailable)
         {
-            // Itt is a GetByIdAsync helyett GetAsync-et használunk a szűréssel és az Include-dal
-            var users = await _unitOfWork.UserRepository.GetAsync(
-                filter: u => u.Id == maintainerId,
-                includeProperties: "MaintenanceSpecialisation"
-            );
+            var maintainer = await _unitOfWork.MaintainerRepository.GetByIdAsync(maintainerId)
+                ?? throw new KeyNotFoundException($"A karbantartó a megadott azonosítóval ({maintainerId}) nem található.");
 
-            var user = users.FirstOrDefault();
+            if (maintainer.IsAvailable == isAvailable)
+                throw new InvalidOperationException($"A karbantartó elérhetősége már {(isAvailable ? "elérhető" : "nem elérhető")} állapotban van.");
 
-            // Ellenőrizzük, hogy létezik-e, és tényleg karbantartó-e
-            if (user == null || user.Role != Role.Maintainer)
-            {
-                return null;
-            }
-
-            return _mapper.Map<UserDto>(user);
-        }
-
-        public async Task<List<UserDto>> GetMaintainersBySpecialisationIdAsync(int specialisationId)
-        {
-            var allUsers = await _unitOfWork.UserRepository.GetAllAsync(includeProperties: "MaintenanceSpecialisation");
-
-            var maintainers = allUsers
-                .Where(u => u.Role == Role.Maintainer)
-                .Cast<Entities.Maintainer>() 
-                .Where(m => m.MaintenanceSpecialisation.Any(ms => ms.Id == specialisationId))
-                .ToList();
-
-            return _mapper.Map<List<UserDto>>(maintainers);
-        }
-
-        public async Task<bool> UpdateAvailabilityAsync(int maintainerId, bool isAvailable)
-        {
-            var user = await _unitOfWork.UserRepository.GetByIdAsync(maintainerId);
-
-            if (user == null || user.Role != Role.Maintainer)
-            {
-                return false;
-            }
-
-            var maintainer = (Entities.Maintainer)user;
             maintainer.IsAvailable = isAvailable;
 
-            _unitOfWork.UserRepository.Update(maintainer);
             await _unitOfWork.SaveChangesAsync();
 
-            return true;
+            return _mapper.Map<MaintainerResponseDto>(maintainer);
         }
     }
 }

@@ -6,7 +6,6 @@
         public Premise DormRoom { get; set; } // the dorm room where the collegiate lives
 
         public ICollection<Fault> ReportedFaults { get; set; } = new List<Fault>();
-        public ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback>();
 
         protected Collegiate() : base() { } // Parameterless constructor for EF Core
 

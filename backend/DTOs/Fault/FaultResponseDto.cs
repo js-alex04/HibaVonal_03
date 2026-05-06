@@ -1,8 +1,7 @@
-﻿using HibaVonal_03.DTOs.Feedback;
-using HibaVonal_03.DTOs.ToolOrder;
+﻿using HibaVonal_03.DTOs;
 using HibaVonal_03.Entities;
 
-namespace HibaVonal_03.DTOs.Fault
+namespace HibaVonal_03.DTOs
 {
     public class FaultResponseDto
     {

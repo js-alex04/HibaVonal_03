@@ -1,6 +1,6 @@
 ﻿using HibaVonal_03.Entities;
 
-namespace HibaVonal_03.DTOs.Feedback
+namespace HibaVonal_03.DTOs
 {
     public class FeedbackResponseDto
     {

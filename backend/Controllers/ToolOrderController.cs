@@ -1,13 +1,16 @@
-﻿using HibaVonal_03.DTOs.ToolOrder;
-using HibaVonal_03.Interfaces.ToolOrder;
-using HibaVonal_03.Services.ToolOrder;
+﻿using HibaVonal_03.DTOs;
+using HibaVonal_03.Interfaces;
+using HibaVonal_03.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HibaVonal_03.Controllers.ToolOrder
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [Authorize]
     public class ToolOrderController : ControllerBase
     {
         private readonly IToolOrderService _toolOrderService;
@@ -17,101 +20,153 @@ namespace HibaVonal_03.Controllers.ToolOrder
             _toolOrderService = toolOrderService;
         }
 
-
-        // CRUD négy alapművelet a ToolOrder entitásra
         // Create
-        [HttpPost]
-        public async Task<IActionResult> CreateToolOrder([FromBody] ToolOrderCreateDto body)
+        [HttpPost("{faultId}")]
+        [Authorize(Roles = "MaintenanceManager,Maintainer")]
+        public async Task<IActionResult> CreateToolOrder(int faultId, [FromBody] ToolOrderCreateDto body)
         {
-            var result = await _toolOrderService.CreateToolOrderAsync(body);
-
-            return CreatedAtAction(nameof(GetToolOrderById), new { id = result.Id }, result);
+            try
+            {
+                var result = await _toolOrderService.CreateToolOrderAsync(faultId, body);
+                return CreatedAtAction(nameof(GetToolOrderById), new { id = result.Id }, result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllOrders()
+        [Authorize(Roles = "MaintenanceManager,Administrator")]
+        public async Task<IActionResult> GetAllToolOrders()
         {
-            var result = await _toolOrderService.GetAllToolOrdersAsync();
-
-            return Ok(result);
-        }
-
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetToolOrderById(int id)
-        {
-            var result = await _toolOrderService.GetToolOrderByIdAsync(id);
-
-            if (result is null)
+            try
             {
-                return NotFound();
-            }
-            else
-            {
+                var result = await _toolOrderService.GetAllToolOrdersAsync();
                 return Ok(result);
             }
-        }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateToolOrder(int id, [FromBody] ToolOrderUpdateDto body)
-        {
-            var result = await _toolOrderService.UpdateToolOrderAsync(id, body);
-
-            if (result)
+            catch (Exception ex)
             {
-                return NoContent();
-            }
-            else
-            {
-                return NotFound();
+                return BadRequest(ex.Message);
             }
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteToolOrder(int id)
+        [HttpGet("{toolOrderId}")]
+        [Authorize(Roles = "MaintenanceManager,Administrator")]
+        public async Task<IActionResult> GetToolOrderById(int toolOrderId)
         {
-            var result = await _toolOrderService.DeleteToolOrderAsync(id);
-
-            if (result)
+            try
             {
-                return NoContent();
+                var result = await _toolOrderService.GetToolOrderByIdAsync(toolOrderId);
+                return Ok(result);
             }
-            else
+            catch (KeyNotFoundException ex)
             {
-                return NotFound();
+                return NotFound(ex.Message);
             }
-        }
-
-
-        //Specific operations for ToolOrder
-        [HttpPut("{id}/delivery-status")]
-        public async Task<IActionResult> UpdateDeliveryStatus(int id, [FromBody] bool isDelivered)
-        {
-            var result = await _toolOrderService.UpdateDeliveryStatusAsync(id, isDelivered);
-
-            if (result)
+            catch (Exception ex)
             {
-                return NoContent();
-            }
-            else
-            {
-                return NotFound();
+                return BadRequest(ex.Message);
             }
         }
 
         [HttpGet("fault/{faultId}")]
+        [Authorize(Roles = "MaintenanceManager,Administrator")]
         public async Task<IActionResult> GetToolOrdersByFaultId(int faultId)
         {
-            var result = await _toolOrderService.GetToolOrdersByFaultIdAsync(faultId);
-
-            return Ok(result);
+            try
+            {
+                var result = await _toolOrderService.GetToolOrdersByFaultIdAsync(faultId);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet("pending")]
-        public async Task<IActionResult> GetPendingOrders()
+        [Authorize(Roles = "MaintenanceManager,Administrator")]
+        public async Task<IActionResult> GetPendingToolOrders()
         {
-            var result = await _toolOrderService.GetPendingOrdersAsync();
+            try
+            {
+                var result = await _toolOrderService.GetPendingToolOrdersAsync();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
 
-            return Ok(result);
+        [HttpPut("{toolOrderId}")]
+        [Authorize(Roles = "MaintenanceManager")]
+        public async Task<IActionResult> UpdateToolOrder(int toolOrderId, [FromBody] ToolOrderUpdateDto body)
+        {
+            try
+            {
+                var result = await _toolOrderService.UpdateToolOrderAsync(toolOrderId, body);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPut("{toolOrderId}/delivery-status")]
+        [Authorize(Roles = "MaintenanceManager")]
+        public async Task<IActionResult> UpdateDeliveryStatus(int toolOrderId, bool isDelivered)
+        {
+            try
+            {
+                var result = await _toolOrderService.UpdateDeliveryStatusAsync(toolOrderId, isDelivered);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpDelete("{toolOrderId}")]
+        [Authorize(Roles = "MaintenanceManager")]
+        public async Task<IActionResult> DeleteToolOrder(int toolOrderId)
+        {
+            try
+            {
+                await _toolOrderService.DeleteToolOrderAsync(toolOrderId);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

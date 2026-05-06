@@ -1,4 +1,4 @@
-﻿namespace HibaVonal_03.DTOs.Feedback
+﻿namespace HibaVonal_03.DTOs
 {
     public class FeedbackUpdateDto
     {
