@@ -49,7 +49,7 @@ namespace HibaVonal_03.Services
 
             dto.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
-            var manager = _mapper.Map<User>(dto);
+            var manager = _mapper.Map<MaintenanceManager>(dto);
             manager.Role = Role.MaintenanceManager;
 
             await _unitOfWork.UserRepository.AddAsync(manager);
@@ -90,7 +90,7 @@ namespace HibaVonal_03.Services
 
             dto.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
-            var maintainer = _mapper.Map<Entities.Maintainer>(dto);
+            var maintainer = _mapper.Map<Maintainer>(dto);
             maintainer.Role = Role.Maintainer;
             maintainer.IsAvailable = true;
 
