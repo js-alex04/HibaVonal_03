@@ -18,7 +18,7 @@ A **HibaVonal** egy modern, backend alapú (ASP.NET Core Web API) megoldás, ame
 
 ## 💻 Technológiai stack
 
-- **Keretrendszer:** ASP.NET Core Web API (.NET 8/9)
+- **Keretrendszer:** ASP.NET Core Web API (.NET 10)
 - **Adatbázis:** Microsoft SQL Server
 - **ORM:** Entity Framework Core
 - **Architektúra:** 
