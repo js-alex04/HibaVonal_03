@@ -72,6 +72,10 @@ namespace HibaVonal_03.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("PremiseId")
                         .HasColumnType("int");
 

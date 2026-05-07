@@ -14,6 +14,7 @@ namespace HibaVonal_03.Entities
     public class Fault
     {
         public int Id { get; set; } // Azonosító, elsődleges kulcs
+        public string Name { get; set; } = null!; // A hiba rövid megnevezése, amely segít a karbantartónak gyorsan azonosítani a problémát
         public string Description { get; set; } = null!; // A hiba részletes leírása, amely segít a karbantartónak megérteni a problémát és annak 
         public string Attachment { get; set; } = null!; // Dokumentáció a hiba részleteiről, például fényképek vagy egyéb fájlok hivatkozása, amelyek segíthetnek a karbantartónak megérteni a problémát
         public DateTime Date { get; set; } // A hiba bejelentésének dátuma

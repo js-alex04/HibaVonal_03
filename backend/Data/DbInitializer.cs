@@ -96,6 +96,7 @@ namespace HibaVonal_03.Data
             // 1. hiba: Folyamatban lévő, eszközhöz kötött, karbantartóhoz rendelve
             var f1 = new Fault
             {
+                Name = "Mosógép hiba",
                 Description = "Nem centrifugáz a mosógép",
                 Attachment = "wash_error.jpg",
                 Date = DateTime.Now.AddDays(-2),
@@ -110,6 +111,7 @@ namespace HibaVonal_03.Data
             // 2. hiba: Alkatrészre vár, szobában történt
             var f2 = new Fault
             {
+                Name = "Radiátor szivárgás",
                 Description = "Csöpög a radiátor",
                 Attachment = "radiator.png",
                 Date = DateTime.Now.AddDays(-5),
@@ -123,6 +125,7 @@ namespace HibaVonal_03.Data
             // 3. hiba: Új bejelentés, nincs még rendelve senkihez
             var f3 = new Fault
             {
+                Name = "Internet hiba",
                 Description = "Nincs net a szobában",
                 Attachment = "no_internet.jpg",
                 Date = DateTime.Now,
@@ -135,6 +138,7 @@ namespace HibaVonal_03.Data
             // 4. hiba: Javított hiba (visszajelzéshez)
             var f4 = new Fault
             {
+                Name = "Világítás hiba",
                 Description = "Kiégett izzó a konyhában",
                 Attachment = "dark.jpg",
                 Date = DateTime.Now.AddDays(-10),
