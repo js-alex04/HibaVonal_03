@@ -3,13 +3,14 @@ import { useAuth } from '../../context/AuthContext';
 import '../../styles/RoleDashboards.css';
 
 const EgyetemistaDashboard = () => {
-  const { user, tasks, createTask, hasPermission, addFeedback } = useAuth();
+  const { user, tasks, createTask, hasPermission, addFeedback, premises, appliances, specializations } = useAuth();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
   const [specialization, setSpecialization] = useState('');
+  const [applianceId, setApplianceId] = useState('');
+  const [attachment, setAttachment] = useState(null);
   const [feedbackInputs, setFeedbackInputs] = useState({});
-  const SPECIALIZATIONS = ['Vízvezeték-szerelő', 'Villanyszerelő', 'Asztalos', 'Lakatos', 'Informatikus', 'Egyéb'];
 
   // generic sanitizer: letters, numbers, spaces, hyphens and Hungarian accents
   const sanitizeText = (input) => {
@@ -18,7 +19,7 @@ const EgyetemistaDashboard = () => {
 
   const myTasks = tasks.filter(t => String(t.createdBy) === String(user.id));
 
-  const handleCreateTask = (e) => {
+  const handleCreateTask = async (e) => {
     e.preventDefault();
     try {
       if (!location || location.trim().length === 0) {
@@ -28,11 +29,14 @@ const EgyetemistaDashboard = () => {
         throw new Error('Kérjük, válassz egy szakterületet!');
       }
       // leave assignedTo empty; manager will assign a worker later
-      createTask(title, description, '', location, specialization);
+      const fileName = attachment ? attachment.name : null;
+      await createTask(title, description, '', location, specialization, applianceId, fileName);
       setTitle('');
       setDescription('');
       setLocation('');
       setSpecialization('');
+      setApplianceId('');
+      setAttachment(null);
       alert('Hibabejelentés sikeresen elküldve!');
     } catch (error) {
       alert('Hiba történt a bejelentés során: ' + error.message);
@@ -120,12 +124,36 @@ const EgyetemistaDashboard = () => {
               </div>
               <div className="form-group">
                 <label>Helyszín / Szoba</label>
-                <input
-                  type="text"
+                <select
                   value={location}
-                  onChange={(e) => setLocation(sanitizeText(e.target.value))}
-                  placeholder="pl. 3-as épület, 204-es szoba"
-                />
+                  onChange={(e) => {
+                    setLocation(e.target.value);
+                    setApplianceId(''); // Töröljük a berendezést, ha megváltozik a szoba
+                  }}
+                  required
+                >
+                  <option value="">-- Válassz egy helyiséget --</option>
+                  {premises.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.nameOrNumber}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Berendezés (Opcionális)</label>
+                <select
+                  value={applianceId}
+                  onChange={(e) => setApplianceId(e.target.value)}
+                  disabled={!location} // Csak akkor választható, ha már van helyiség
+                >
+                  <option value="">-- Nem berendezéshez kapcsolódik --</option>
+                  {location && appliances
+                    .filter(a => String(a.premiseId) === String(location))
+                    .map(a => (
+                      <option key={a.id} value={a.id}>{a.name}</option>
+                    ))}
+                </select>
               </div>
               <div className="form-group">
                 <label>Szükséges szakember</label>
@@ -135,10 +163,23 @@ const EgyetemistaDashboard = () => {
                   required
                 >
                   <option value="">-- válassz --</option>
-                  {SPECIALIZATIONS.map(s => (
-                    <option key={s} value={s}>{s}</option>
+                  {specializations.map(s => (
+                    <option key={s.id} value={s.name}>{s.name}</option>
                   ))}
                 </select>
+              </div>
+
+              <div className="form-group">
+                <label>Kép csatolása (Opcionális)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      setAttachment(e.target.files[0]);
+                    }
+                  }}
+                />
               </div>
 
               <button type="submit" className="btn-primary">
