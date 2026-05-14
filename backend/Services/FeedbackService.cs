@@ -4,6 +4,7 @@ using AutoMapper.QueryableExtensions;
 using HibaVonal_03.DTOs;
 using HibaVonal_03.Interfaces;
 using HibaVonal_03.Repositories;
+using HibaVonal_03.Entities;
 
 namespace HibaVonal_03.Services
 {
@@ -46,6 +47,9 @@ namespace HibaVonal_03.Services
             _mapper.Map(feedback, existingFeedback);
 
             _unitOfWork.FeedbackRepository.Update(existingFeedback);
+
+            // A visszajelzés szövegének frissítése után a hiba állapotát újra "Folyamatban" állapotra állítjuk, hogy jelezzük, hogy a visszajelzés újra feldolgozásra vár.
+            existingFeedback.Fault.Status = FaultStatus.InProgress;
 
             await _unitOfWork.SaveChangesAsync();
 

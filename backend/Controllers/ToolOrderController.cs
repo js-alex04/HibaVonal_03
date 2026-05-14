@@ -93,6 +93,25 @@ namespace HibaVonal_03.Controllers.ToolOrder
             }
         }
 
+        [HttpGet("maintainer/{maintainerId}")]
+        [Authorize(Roles = "Maintainer,MaintenanceManager,Administrator")]
+        public async Task<IActionResult> GetToolOrdersByMaintainerId(int maintainerId)
+        {
+            try
+            {
+                var result = await _toolOrderService.GetToolOrdersByMaintainerIdAsync(maintainerId);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         [HttpGet("pending")]
         [Authorize(Roles = "MaintenanceManager,Administrator")]
         public async Task<IActionResult> GetPendingToolOrders()

@@ -71,6 +71,18 @@ namespace HibaVonal_03.Services
                 .ToListAsync();
         }
 
+        // Egy adott karbantartóhoz tartozó rendeléseket lekérdezzük
+        public async Task<List<ToolOrderResponseDto>> GetToolOrdersByMaintainerIdAsync(int maintainerId)
+        {
+            if (await _unitOfWork.MaintainerRepository.GetByIdAsync(maintainerId) == null)
+                throw new KeyNotFoundException($"A karbantartó a megadott azonosítóval ({maintainerId}) nem található.");
+
+            return await _unitOfWork.ToolOrderRepository.GetQueryable()
+                .Where(order => order.Fault.AssignedMaintenanceId == maintainerId)
+                .ProjectTo<ToolOrderResponseDto>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+        }
+
         // Minden olyan rendelés lekérdezése, amely még nem került kiszállításra
         public async Task<List<ToolOrderResponseDto>> GetPendingToolOrdersAsync()
         {
