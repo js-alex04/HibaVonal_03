@@ -99,8 +99,10 @@ export const userAPI = {
   createMaintainer: (data) => apiCall('/User/CreateMaintainer', { method: 'POST', body: JSON.stringify(data) }),
   createAdministrator: (data) => apiCall('/User/CreateAdministrator', { method: 'POST', body: JSON.stringify(data) }),
   createMaintenanceManager: (data) => apiCall('/User/CreateMaintenanceManager', { method: 'POST', body: JSON.stringify(data) }),
-  changeRole: (userId, roleEnum) => apiCall(`/User/ChangeUserRole/${userId}?newRole=${roleEnum}`, { method: 'PUT' }),
+  changeRole: (userId, roleEnum) => apiCall(`/User/ChangeUserRole/${userId}/change-role?newRole=${roleEnum}`, { method: 'PUT' }),
   delete: (id) => apiCall(`/User/DeleteUser/${id}/delete`, { method: 'DELETE' }),
+  updateProfile: (userId, data) => apiCall(`/User/UpdateUserProfile/${userId}/profile`, { method: 'PUT', body: JSON.stringify(data) }),
+  changePassword: (userId, data) => apiCall(`/User/ChangePassword/${userId}/change-password`, { method: 'PUT', body: JSON.stringify(data) }),
 };
 
 // --- PREMISES (Helyiségek) ---
@@ -147,17 +149,29 @@ export const specialisationAPI = {
 export const faultAPI = {
   getAll: () => apiCall('/Fault/GetAllFaults'),
   getById: (id) => apiCall(`/Fault/GetFaultById/${id}`),
+  getByCollegiateId: (id) => apiCall(`/Fault/GetFaultsByCollegiateId/${id}`),
   create: (collegiateId, data) => apiCall(`/Fault/CreateFault/${collegiateId}`, { method: 'POST', body: JSON.stringify(data) }),
   update: (id, data) => apiCall(`/Fault/UpdateFault/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id) => apiCall(`/Fault/DeleteFault/${id}`, { method: 'DELETE' }),
-  addFeedback: (id, data) => apiCall(`/Fault/AddFeedback/${id}/add-feedback`, { method: 'POST', body: JSON.stringify(data) }),
+  addFeedback: (id, data) => apiCall(`/Fault/NewFeedback/${id}/new-feedback`, { method: 'POST', body: JSON.stringify(data) }),
   assignMaintainer: (faultId, maintainerId) => apiCall(`/Fault/AssignFaultMaintainer/${faultId}/assign-maintainer?id=${faultId}&faultId=${faultId}&maintainerId=${maintainerId}`, { method: 'PUT', body: JSON.stringify({}) }),
-  updateStatus: (id, data) => apiCall(`/Fault/UpdateFaultStatus/${id}/update-status`, { method: 'PUT', body: JSON.stringify(data) }),
+  setSpecialisation: (faultId, specialisationId) => apiCall(`/Fault/SetFaultSpecialisation/${faultId}/set-maintainer-specialisation?specialisationId=${specialisationId}`, { method: 'PUT' }),
+  updateStatus: (id, data) => {
+    
+    const sVal = data && typeof data === 'object' ? (data.status !== undefined ? data.status : data.Status) : data;
+    return apiCall(`/Fault/UpdateFaultStatus/${id}/update-status?status=${sVal}&newStatus=${sVal}`, { method: 'PUT', body: JSON.stringify(data) });
+  },
 };
 
 // --- TOOL ORDERS (Eszközrendelések) ---
 export const toolOrderAPI = {
-  getAll: () => apiCall('/ToolOrder/GetAllOrders'),
+  getAll: async () => {
+    try {
+      return await apiCall('/ToolOrder/GetAllToolOrders');
+    } catch (err) {
+      return await apiCall('/ToolOrder/GetAllOrders');
+    }
+  },
   create: (faultId, data) => apiCall(`/ToolOrder/CreateToolOrder/${faultId}`, { method: 'POST', body: JSON.stringify(data) }),
   update: (id, data) => apiCall(`/ToolOrder/UpdateToolOrder/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   updateDeliveryStatus: (id, isDelivered) => apiCall(`/ToolOrder/UpdateDeliveryStatus/${id}/delivery-status?isDelivered=${isDelivered}`, { method: 'PUT' }),

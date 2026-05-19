@@ -84,8 +84,12 @@
   border-color: #667eea;
 }
 
+textarea {
+  resize: none;
+  field-sizing: content;
+}
+
 .form-group textarea {
-  resize: vertical;
   min-height: 100px;
 }
 

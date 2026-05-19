@@ -73,9 +73,11 @@ const Login = () => {
               type="email"
               value={email}
               onChange={(e) => setEmail(sanitizeEmail(e.target.value))}
-              placeholder="pelda@email.hu"
+              placeholder="pelda@hibavonal.hu"
               required
+              maxLength={50}
             />
+            <small style={{ display: 'block', textAlign: 'right', color: '#a0aec0', fontSize: '0.8em', marginTop: '5px' }}>{email.length} / 50</small>
           </div>
 
           <div className="form-group">
@@ -87,6 +89,7 @@ const Login = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="pl., Titkos@123! vagy Jelszo1"
                 required
+                maxLength={50}
               />
               <button
                 type="button"
@@ -97,7 +100,10 @@ const Login = () => {
                 {showPassword ? '◡ Elrejtés' : '👁️ Mutatás'}
               </button>
             </div>
-            <small className="form-hint">Minimum 4 karakter (speciális karakterek, pl. !@#$%^&* engedélyezettek)</small>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <small className="form-hint" style={{ marginTop: '5px' }}>Minimum 4 karakter</small>
+              <small style={{ color: '#a0aec0', fontSize: '0.8em', marginTop: '5px' }}>{password.length} / 50</small>
+            </div>
           </div>
 
           {error && <div className="error-message">{error}</div>}

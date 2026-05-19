@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import '../../styles/RoleDashboards.css';
 
 const AdminisztratoriDashboard = () => {
-  const { user, users, tasks, toolRequests, equipmentOrders, premises, appliances, specializations, register, ROLES, deleteTask, createPremise, deletePremise, deleteUser, changeUserRole, createAppliance, deleteAppliance, assignApplianceToPremise, removeApplianceFromPremise, createSpecialization, updateSpecialization, deleteSpecialization, deleteFeedback } = useAuth();
+  const { user, users, tasks, toolRequests, equipmentOrders, premises, appliances, specializations, register, ROLES, deleteTask, createPremise, deletePremise, deleteUser, changeUserRole, createAppliance, deleteAppliance, assignApplianceToPremise, removeApplianceFromPremise, updateAppliance, createSpecialization, updateSpecialization, deleteSpecialization, deleteFeedback } = useAuth();
   const [showAddUser, setShowAddUser] = useState(false);
   const [showAddPremise, setShowAddPremise] = useState(false);
   const [showAddAppliance, setShowAddAppliance] = useState(false);
@@ -13,13 +13,17 @@ const AdminisztratoriDashboard = () => {
   const [newUserPassword, setNewUserPassword] = useState('');
   const [newUserName, setNewUserName] = useState('');
   const [newUserRole, setNewUserRole] = useState(ROLES.EGYETEMISTA);
-  const [newUserSpecialization, setNewUserSpecialization] = useState('');
+  const [newUserSpecialization, setNewUserSpecialization] = useState([]);
   const [newUserPremiseId, setNewUserPremiseId] = useState('');
   const [newPremiseName, setNewPremiseName] = useState('');
   const [newPremiseFloor, setNewPremiseFloor] = useState(1);
   const [newPremiseType, setNewPremiseType] = useState(0);
   const [newApplianceName, setNewApplianceName] = useState('');
   const [newAppliancePremiseId, setNewAppliancePremiseId] = useState('');
+  const [showEditAppliance, setShowEditAppliance] = useState(false);
+  const [editApplianceId, setEditApplianceId] = useState(null);
+  const [editApplianceName, setEditApplianceName] = useState('');
+  const [editAppliancePremiseId, setEditAppliancePremiseId] = useState('');
   const [newSpecializationName, setNewSpecializationName] = useState('');
   const [requestFilter, setRequestFilter] = useState('all');
   const [taskFilter, setTaskFilter] = useState('all');
@@ -58,6 +62,11 @@ const AdminisztratoriDashboard = () => {
       return;
     }
 
+    if (newUserRole === ROLES.KARBANTARTAS && (!newUserSpecialization || newUserSpecialization.length === 0)) {
+      setError('Kérjük, válassz legalább egy szakterületet a karbantartónak!');
+      return;
+    }
+
     if (newUserRole === ROLES.EGYETEMISTA && !newUserPremiseId) {
       setError('Kérjük, válaszd ki a kollégista szobáját!');
       return;
@@ -69,7 +78,7 @@ const AdminisztratoriDashboard = () => {
         newUserPassword,
         sanitizeInput(newUserName),
         newUserRole,
-        newUserRole === ROLES.KARBANTARTAS ? newUserSpecialization : '',
+        newUserRole === ROLES.KARBANTARTAS ? newUserSpecialization : [],
         newUserRole === ROLES.EGYETEMISTA ? newUserPremiseId : null
       );
       setSuccess('Felhasználó sikeresen létrehozva!');
@@ -77,6 +86,7 @@ const AdminisztratoriDashboard = () => {
       setNewUserPassword('');
       setNewUserName('');
       setNewUserRole(ROLES.EGYETEMISTA);
+      setNewUserSpecialization([]);
       setNewUserPremiseId('');
       setShowAddUser(false);
     } catch (err) {
@@ -142,22 +152,12 @@ const AdminisztratoriDashboard = () => {
     }
   };
 
-  const handleChangeRole = async (userId, currentRole) => {
-    const newRoleStr = window.prompt(`Jelenlegi szerepkör: ${currentRole}\nÍrd be az új szerepkört:\n0 - Egyetemista\n1 - Karbantartó\n2 - Vezető\n3 - Admin`, "");
-    if (newRoleStr !== null) {
-      let newRole;
-      if (newRoleStr === "0") newRole = ROLES.EGYETEMISTA;
-      else if (newRoleStr === "1") newRole = ROLES.KARBANTARTAS;
-      else if (newRoleStr === "2") newRole = ROLES.KARBANTARTAS_VEZETO;
-      else if (newRoleStr === "3") newRole = ROLES.ADMINISZTRATOR;
-      else return alert("Érvénytelen választás!");
-
-      try {
-        await changeUserRole(userId, newRole);
-        setSuccess('Szerepkör sikeresen módosítva!');
-      } catch (err) {
-        setError(err.message);
-      }
+  const handleChangeRole = async (userId, newRole) => {
+    try {
+      await changeUserRole(userId, newRole);
+      setSuccess('Szerepkör sikeresen módosítva!');
+    } catch (err) {
+      setError(err.message);
     }
   };
 
@@ -173,6 +173,30 @@ const AdminisztratoriDashboard = () => {
       setNewAppliancePremiseId('');
       setShowAddAppliance(false);
       setSuccess('Berendezés sikeresen létrehozva!');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleEditApplianceClick = (appliance) => {
+    setEditApplianceId(appliance.id);
+    setEditApplianceName(appliance.name);
+    setEditAppliancePremiseId(appliance.premiseId ? appliance.premiseId.toString() : ''); // Convert to string for select value
+    setShowEditAppliance(true);
+    setError('');
+    setSuccess('');
+  };
+
+  const handleUpdateAppliance = async (e) => {
+    e.preventDefault();
+    setError(''); setSuccess('');
+    try {
+      await updateAppliance(editApplianceId, sanitizeInput(editApplianceName), editAppliancePremiseId);
+      setSuccess('Berendezés sikeresen frissítve!');
+      setShowEditAppliance(false);
+      setEditApplianceId(null);
+      setEditApplianceName('');
+      setEditAppliancePremiseId('');
     } catch (err) {
       setError(err.message);
     }
@@ -246,7 +270,16 @@ const AdminisztratoriDashboard = () => {
 
   const completedTasks = tasks.filter(t => t.completed);
   const filteredRequests = toolRequests.filter(tr => requestFilter === 'all' || tr.status === requestFilter);
-  const filteredTasks = tasks.filter(t => taskFilter === 'all' || t.status === taskFilter);
+  const filteredTasks = tasks.filter(t => {
+    if (taskFilter === 'all') return true;
+    const rawStatus = t._backendData?.status;
+    if (taskFilter === 'Pending') return rawStatus === 0 || rawStatus === 'Pending' || (!rawStatus && t.status === 'pending');
+    if (taskFilter === 'InProgress') return rawStatus === 1 || rawStatus === 'InProgress' || (!rawStatus && t.status === 'in_progress');
+    if (taskFilter === 'AwaitingParts') return rawStatus === 2 || rawStatus === 'AwaitingParts';
+    if (taskFilter === 'Repaired') return rawStatus === 3 || rawStatus === 'Repaired' || (!rawStatus && t.status === 'completed');
+    if (taskFilter === 'Unrepairable') return rawStatus === 4 || rawStatus === 'Unrepairable';
+    return false;
+  });
 
   const stats = {
     totalUsers: users.length,
@@ -307,15 +340,18 @@ const AdminisztratoriDashboard = () => {
             <form onSubmit={handleAddUser} className="form">
               <div className="form-group">
                 <label>Név</label>
-            <input type="text" value={newUserName} onChange={(e) => setNewUserName(e.target.value)} placeholder="Felhasználó teljes neve" required />
+            <input type="text" value={newUserName} onChange={(e) => setNewUserName(e.target.value)} placeholder="Felhasználó teljes neve" required maxLength={50} />
+                <small style={{ display: 'block', textAlign: 'right', color: '#a0aec0', fontSize: '0.8em', marginTop: '5px' }}>{newUserName.length} / 50</small>
               </div>
               <div className="form-group">
                 <label>E-mail Cím</label>
-            <input type="email" value={newUserEmail} onChange={(e) => setNewUserEmail(e.target.value)} placeholder="pelda@email.hu" required />
+            <input type="email" value={newUserEmail} onChange={(e) => setNewUserEmail(e.target.value)} placeholder="pelda@hibavonal.hu" required maxLength={50} />
+                <small style={{ display: 'block', textAlign: 'right', color: '#a0aec0', fontSize: '0.8em', marginTop: '5px' }}>{newUserEmail.length} / 50</small>
               </div>
               <div className="form-group">
                 <label>Jelszó</label>
-                <input type="password" value={newUserPassword} onChange={(e) => setNewUserPassword(e.target.value)} placeholder="Kezdeti jelszó" required />
+                <input type="password" value={newUserPassword} onChange={(e) => setNewUserPassword(e.target.value)} placeholder="Kezdeti jelszó" required maxLength={50} />
+                <small style={{ display: 'block', textAlign: 'right', color: '#a0aec0', fontSize: '0.8em', marginTop: '5px' }}>{newUserPassword.length} / 50</small>
               </div>
               <div className="form-group">
                 <label>Szerepkör</label>
@@ -328,11 +364,28 @@ const AdminisztratoriDashboard = () => {
               </div>
               {newUserRole === ROLES.KARBANTARTAS && (
                 <div className="form-group">
-                  <label>Szakterület</label>
-                  <select value={newUserSpecialization} onChange={(e) => setNewUserSpecialization(e.target.value)} required>
-                    <option value="">-- Válassz --</option>
-                    {specializations.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
+                  <label>Szakterületek (Több is választható)</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px', border: '2px solid #e0e0e0', borderRadius: '5px' }}>
+                    {specializations.map(s => (
+                      <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'normal', cursor: 'pointer', fontSize: '14px', color: '#555' }}>
+                        <input
+                          type="checkbox"
+                          value={s.id}
+                          checked={Array.isArray(newUserSpecialization) ? newUserSpecialization.includes(String(s.id)) : false}
+                          onChange={(e) => {
+                            const idStr = String(s.id);
+                            if (e.target.checked) {
+                              setNewUserSpecialization(prev => Array.isArray(prev) ? [...prev, idStr] : [idStr]);
+                            } else {
+                              setNewUserSpecialization(prev => Array.isArray(prev) ? prev.filter(item => item !== idStr) : []);
+                            }
+                          }}
+                          style={{ width: 'auto', margin: 0 }}
+                        />
+                        {s.name}
+                      </label>
+                    ))}
+                  </div>
                 </div>
               )}
               {newUserRole === ROLES.EGYETEMISTA && (
@@ -340,7 +393,7 @@ const AdminisztratoriDashboard = () => {
                   <label>Kollégiumi Szoba (Helyiség)</label>
                   <select value={newUserPremiseId} onChange={(e) => setNewUserPremiseId(e.target.value)} required>
                     <option value="">-- Válassz szobát --</option>
-                    {premises.filter(p => p.type === 'DormRoom' || p.type === 0).map(p => (
+                    {premises.map(p => (
                       <option key={p.id} value={p.id}>{p.nameOrNumber}</option>
                     ))}
                   </select>
@@ -368,12 +421,22 @@ const AdminisztratoriDashboard = () => {
                   <tr key={u.id}>
                     <td>{u.name}</td>
                     <td>{u.email}</td>
-                    <td><span className={`role-badge role-${u.role.toLowerCase()}`}>{u.role}</span></td>
+                  <td>
+                    {String(u.id) !== String(user.id) ? (
+                      <select value={u.role} onChange={(e) => handleChangeRole(u.id, e.target.value)}>
+                        <option value={ROLES.EGYETEMISTA}>{ROLES.EGYETEMISTA}</option>
+                        <option value={ROLES.KARBANTARTAS}>{ROLES.KARBANTARTAS}</option>
+                        <option value={ROLES.KARBANTARTAS_VEZETO}>{ROLES.KARBANTARTAS_VEZETO}</option>
+                        <option value={ROLES.ADMINISZTRATOR}>{ROLES.ADMINISZTRATOR}</option>
+                      </select>
+                    ) : (
+                      <span className={`role-badge role-${u.role.toLowerCase()}`}>{u.role}</span>
+                    )}
+                  </td>
                     <td>{u.specialization || '-'}</td>
                     <td>
                       {String(u.id) !== String(user.id) && (
                         <>
-                          <button className="btn-approve" style={{padding: '4px 8px', fontSize: '0.8em', marginRight: '5px'}} onClick={() => handleChangeRole(u.id, u.role)}>Jogosultság</button>
                           <button className="btn-delete-small" onClick={() => handleDeleteUser(u.id)}>Törlés</button>
                         </>
                       )}
@@ -398,7 +461,8 @@ const AdminisztratoriDashboard = () => {
             <form onSubmit={handleAddPremise} className="form">
               <div className="form-group">
                 <label>Név vagy Szám</label>
-                <input type="text" value={newPremiseName} onChange={(e) => setNewPremiseName(e.target.value)} placeholder="pl. 101-es szoba, Mosókonyha" required />
+                <input type="text" value={newPremiseName} onChange={(e) => setNewPremiseName(e.target.value)} placeholder="pl. 101-es szoba, Mosókonyha" required maxLength={30} />
+                <small style={{ display: 'block', textAlign: 'right', color: '#a0aec0', fontSize: '0.8em', marginTop: '5px' }}>{newPremiseName.length} / 30</small>
               </div>
               <div className="form-group">
                 <label>Emelet</label>
@@ -407,23 +471,21 @@ const AdminisztratoriDashboard = () => {
               <div className="form-group">
                 <label>Típus</label>
                 <select value={newPremiseType} onChange={(e) => setNewPremiseType(e.target.value)}>
-                  <option value={0}>Kollégiumi szoba</option>
-                  <option value={1}>Közösségi tér</option>
-                  <option value={2}>Kiszolgáló helyiség</option>
+                  <option value={0}>Közösségi tér</option>
+                  <option value={1}>Kollégiumi szoba (Privát)</option>
                 </select>
               </div>
               <button type="submit" className="btn-primary">Helyiség Hozzáadása</button>
             </form>
           )}
 
-          <div className="premises-list" style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '10px' }}>
+          <div className="premises-list users-table" style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '10px' }}>
             {(!premises || premises.length === 0) ? (
               <p className="empty-state">Nincsenek helyiségek a rendszerben</p>
             ) : (
-              <table className="users-table">
+              <table>
                 <thead>
                   <tr>
-                    <th>Azonosító</th>
                     <th>Név / Szám</th>
                     <th>Emelet</th>
                     <th>Típus</th>
@@ -433,10 +495,9 @@ const AdminisztratoriDashboard = () => {
                 <tbody>
                   {premises.map(p => (
                     <tr key={p.id}>
-                      <td>{p.id}</td>
-                      <td>{p.nameOrNumber}</td>
+                      <td><strong>{p.nameOrNumber}</strong></td>
                       <td>{p.floor}. emelet</td>
-                      <td>{p.type === 0 || p.type === 'DormRoom' ? 'Kollégiumi szoba' : p.type === 1 || p.type === 'CommonArea' ? 'Közösségi tér' : 'Kiszolgáló helyiség'}</td>
+                      <td>{String(p.type) === '1' || String(p.type) === 'PrivateRoom' ? 'Kollégiumi szoba (Privát)' : 'Közösségi tér'}</td>
                       <td>
                         <button className="btn-delete-small" onClick={() => handleDeletePremise(p.id)}>Törlés</button>
                       </td>
@@ -461,7 +522,8 @@ const AdminisztratoriDashboard = () => {
             <form onSubmit={handleAddAppliance} className="form">
               <div className="form-group">
                 <label>Berendezés Neve</label>
-                <input type="text" value={newApplianceName} onChange={(e) => setNewApplianceName(e.target.value)} placeholder="pl. Mosógép, 1-es Lift, TV" required />
+                <input type="text" value={newApplianceName} onChange={(e) => setNewApplianceName(e.target.value)} placeholder="pl. Mosógép, 1-es Lift, TV" required maxLength={30} />
+                <small style={{ display: 'block', textAlign: 'right', color: '#a0aec0', fontSize: '0.8em', marginTop: '5px' }}>{newApplianceName.length} / 30</small>
               </div>
               <div className="form-group">
                 <label>Elhelyezés (Helyiség)</label>
@@ -476,40 +538,66 @@ const AdminisztratoriDashboard = () => {
             </form>
           )}
 
-          <div className="appliances-list" style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '10px' }}>
+          {showEditAppliance && (
+            <form onSubmit={handleUpdateAppliance} className="form" style={{ marginBottom: '20px' }}>
+              <h3>Berendezés módosítása</h3>
+              <div className="form-group">
+                <label>Berendezés Neve</label>
+                <input
+                  type="text"
+                  value={editApplianceName}
+                  onChange={(e) => setEditApplianceName(e.target.value)}
+                  required
+                  maxLength={30}
+                />
+                <small style={{ display: 'block', textAlign: 'right', color: '#a0aec0', fontSize: '0.8em', marginTop: '5px' }}>{editApplianceName.length} / 30</small>
+              </div>
+              <div className="form-group">
+                <label>Elhelyezés (Helyiség)</label>
+                <select
+                  value={editAppliancePremiseId}
+                  onChange={(e) => setEditAppliancePremiseId(e.target.value)}
+                >
+                  <option value="">-- Raktáron (Nincs kiosztva) --</option>
+                  {premises.map(p => (
+                    <option key={p.id} value={p.id}>{p.nameOrNumber}</option>
+                  ))}
+                </select>
+              </div>
+              {error && <div className="error-message">{error}</div>}
+              {success && <div className="success-message">{success}</div>}
+              <button type="submit" className="btn-primary">Módosítás mentése</button>
+              <button type="button" className="btn-secondary" onClick={() => setShowEditAppliance(false)} style={{ marginLeft: '10px' }}>Mégse</button>
+            </form>
+          )}
+
+          <div className="appliances-list users-table" style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '10px' }}>
             {(!appliances || appliances.length === 0) ? (
               <p className="empty-state">Nincsenek berendezések a leltárban</p>
             ) : (
-              <table className="users-table">
+              <table>
                 <thead>
                   <tr>
-                    <th>Azonosító</th>
-                    <th>Név</th>
-                    <th>Jelenlegi Helyiség</th>
+                    <th>Berendezés Neve</th>
+                    <th>Elhelyezés (Helyiség)</th>
                     <th>Műveletek</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {appliances.map(a => (
+                  {appliances.map(a => {
+                    const premiseName = a.premiseId 
+                      ? (premises.find(p => String(p.id) === String(a.premiseId))?.nameOrNumber || `Ismeretlen (ID: ${a.premiseId})`)
+                      : 'Raktáron';
+                    return (
                     <tr key={a.id}>
-                      <td>{a.id}</td>
-                      <td>{a.name}</td>
+                      <td><strong>{a.name}</strong></td>
+                      <td>{premiseName}</td>
                       <td>
-                        <select 
-                          value={a.premiseId || ''} 
-                          onChange={(e) => handleAssignAppliance(a.id, a.premiseId, e.target.value)}
-                        >
-                          <option value="">-- Raktáron (Nincs kiosztva) --</option>
-                          {premises.map(p => (
-                            <option key={p.id} value={p.id}>{p.nameOrNumber}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td>
+                        <button className="btn-approve" style={{ padding: '4px 8px', fontSize: '0.8em', marginRight: '5px' }} onClick={() => handleEditApplianceClick(a)}>Módosítás</button>
                         <button className="btn-delete-small" onClick={() => handleDeleteAppliance(a.id)}>Selejtezés</button>
                       </td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             )}
@@ -535,23 +623,21 @@ const AdminisztratoriDashboard = () => {
             </form>
           )}
 
-          <div className="specializations-list" style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '10px' }}>
+          <div className="specializations-list users-table" style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '10px' }}>
             {(!specializations || specializations.length === 0) ? (
               <p className="empty-state">Nincsenek szakterületek a rendszerben</p>
             ) : (
-              <table className="users-table">
+              <table>
                 <thead>
                   <tr>
-                    <th>Azonosító</th>
-                    <th>Név</th>
+                    <th>Szakterület Neve</th>
                     <th>Műveletek</th>
                   </tr>
                 </thead>
                 <tbody>
                   {specializations.map(s => (
                     <tr key={s.id}>
-                      <td>{s.id}</td>
-                      <td>{s.name}</td>
+                      <td><strong>{s.name}</strong></td>
                       <td>
                         <button className="btn-approve" style={{padding: '4px 8px', fontSize: '0.8em', marginRight: '5px'}} onClick={() => handleUpdateSpecialization(s.id, s.name)}>Módosítás</button>
                         <button className="btn-delete-small" onClick={() => handleDeleteSpecialization(s.id)}>Törlés</button>
@@ -579,13 +665,14 @@ const AdminisztratoriDashboard = () => {
               <p className="empty-state">Nincs megjeleníthető rendelés</p>
             ) : (
               filteredRequests.map(req => {
-                const requester = users.find(u => String(u.id) === String(req.requestedBy));
+                const associatedTask = tasks.find(t => String(t.id) === String(req.taskId));
+                const assignedMaintainer = associatedTask ? users.find(u => String(u.id) === String(associatedTask.assignedTo)) : null;
                 return (
                 <div key={req.id} className="order-card">
                   <div className="order-info">
                     <h4>{req.toolName}</h4>
                     <p>Kért mennyiség: <strong>{req.quantity}</strong> db</p>
-                    <p>Kérte: {requester?.name || 'Ismeretlen'}</p>
+                    {assignedMaintainer && <p style={{ margin: '5px 0' }}>Karbantartó: <strong>{assignedMaintainer.name}</strong></p>}
                     <small>{new Date(req.createdAt).toLocaleDateString()}</small>
                   </div>
                   <div className="order-actions">
@@ -602,11 +689,13 @@ const AdminisztratoriDashboard = () => {
         {/* All Faults / Tasks */}
         <section className="section">
           <h2>Hibajelentések Teljeskörű Felügyelete</h2>
-          <div className="filter-controls">
-            <button className={`filter-btn ${taskFilter === 'pending' ? 'active' : ''}`} onClick={() => setTaskFilter('pending')}>Függőben</button>
-            <button className={`filter-btn ${taskFilter === 'in_progress' ? 'active' : ''}`} onClick={() => setTaskFilter('in_progress')}>Folyamatban</button>
-            <button className={`filter-btn ${taskFilter === 'completed' ? 'active' : ''}`} onClick={() => setTaskFilter('completed')}>Kész</button>
+          <div className="filter-controls" style={{ flexWrap: 'wrap' }}>
             <button className={`filter-btn ${taskFilter === 'all' ? 'active' : ''}`} onClick={() => setTaskFilter('all')}>Összes</button>
+            <button className={`filter-btn ${taskFilter === 'Pending' ? 'active' : ''}`} onClick={() => setTaskFilter('Pending')}>Függőben</button>
+            <button className={`filter-btn ${taskFilter === 'InProgress' ? 'active' : ''}`} onClick={() => setTaskFilter('InProgress')}>Folyamatban</button>
+            <button className={`filter-btn ${taskFilter === 'AwaitingParts' ? 'active' : ''}`} onClick={() => setTaskFilter('AwaitingParts')}>Alkatrészre vár</button>
+            <button className={`filter-btn ${taskFilter === 'Repaired' ? 'active' : ''}`} onClick={() => setTaskFilter('Repaired')}>Javítva</button>
+            <button className={`filter-btn ${taskFilter === 'Unrepairable' ? 'active' : ''}`} onClick={() => setTaskFilter('Unrepairable')}>Javíthatatlan</button>
           </div>
           <div className="tasks-list" style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '10px' }}>
             {filteredTasks.length === 0 ? (
@@ -628,7 +717,11 @@ const AdminisztratoriDashboard = () => {
                     </div>
                     <p>{task.description}</p>
                     <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', fontSize: '0.9em', color: '#4a5568', marginTop: '10px' }}>
-                        {task.location && <span><strong>Helyszín:</strong> {task.location}</span>}
+                        {task._backendData?.premiseId ? (
+                          <span><strong>Helyiség:</strong> {premises.find(p => String(p.id) === String(task._backendData.premiseId))?.nameOrNumber || `#${task._backendData.premiseId}`}</span>
+                        ) : task.location ? (
+                          <span><strong>Helyiség:</strong> {task.location}</span>
+                        ) : null}
                         {reporter && <span><strong>Bejelentő:</strong> {reporter.name}</span>}
                         {assignee && <span><strong>Kiosztva:</strong> {assignee.name}</span>}
                     </div>

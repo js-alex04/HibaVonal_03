@@ -128,23 +128,52 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const fetchTasksFromBackend = async () => {
+  const fetchTasksFromBackend = async (currentUser = user) => {
     try {
-      const backendFaults = await faultAPI.getAll();
-      const normalizedTasks = backendFaults.map((f) => {
+      const activeUser = currentUser || JSON.parse(localStorage.getItem("hibavonal_current_user"));
+      let backendFaults = [];
+      
+      if (activeUser && activeUser.role === ROLES.EGYETEMISTA) {
+        try {
+          backendFaults = await faultAPI.getByCollegiateId(activeUser.id);
+        } catch (err) {
+          console.warn("A GetFaultsByCollegiateId végpont nem elérhető, fallback a GetAllFaults-ra...");
+          backendFaults = await faultAPI.getAll();
+        }
+      } else {
+        backendFaults = await faultAPI.getAll();
+      }
+
+      let specsData = JSON.parse(localStorage.getItem("hibavonal_specializations")) || [];
+      if (specsData.length === 0) {
+        try {
+          specsData = await specialisationAPI.getAll();
+        } catch (e) {}
+      }
+
+      const normalizedTasks = (backendFaults || []).map((f) => {
         let specName = 'Egyéb';
-        if (f.specializationId === 1) specName = 'Vízvezeték-szerelő';
-        else if (f.specializationId === 2) specName = 'Villanyszerelő';
-        else if (f.specializationId === 3) specName = 'Asztalos';
-        else if (f.specializationId === 4) specName = 'Lakatos';
-        else if (f.specializationId === 5) specName = 'Informatikus';
+        const fSpecId = f.specializationId || f.specialisationId;
+        if (fSpecId) {
+          const matched = specsData.find(s => String(s.id) === String(fSpecId));
+          if (matched) {
+            specName = matched.name;
+          } else {
+            if (String(fSpecId) === '1') specName = 'Vízvezeték-szerelő';
+            else if (String(fSpecId) === '2') specName = 'Villanyszerelő';
+            else if (String(fSpecId) === '3') specName = 'Asztalos';
+            else if (String(fSpecId) === '4') specName = 'Lakatos';
+            else if (String(fSpecId) === '5') specName = 'Informatikus';
+          }
+        }
 
         const isCompleted = f.status === 3 || f.status === 4 || f.status === 'Repaired' || f.status === 'Unrepairable';
         const feedbackObj = f.feedbacks && f.feedbacks.length > 0 ? f.feedbacks[0] : null;
 
         return {
           id: f.id.toString(),
-          title: f.description ? f.description.substring(0, 30) + (f.description.length > 30 ? "..." : "") : "Névtelen hiba",
+          title: f.name || (f.description ? f.description.substring(0, 30) + (f.description.length > 30 ? "..." : "") : "Névtelen hiba"),
+          name: f.name,
           description: f.description,
           assignedTo: f.assignedMaintenanceId ? f.assignedMaintenanceId.toString() : "",
           createdBy: f.collegiateId ? f.collegiateId.toString() : "",
@@ -177,6 +206,33 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const fetchToolRequestsFromBackend = async (currentUser = user) => {
+    const activeUser = currentUser || JSON.parse(localStorage.getItem("hibavonal_current_user"));
+    
+    if (activeUser && activeUser.role === ROLES.EGYETEMISTA) {
+      return; // Az Egyetemistának nincs jogosultsága (403) és szüksége sem az eszközrendelésekre
+    }
+
+    try {
+      const backendOrders = await toolOrderAPI.getAll();
+      const normalizedOrders = (backendOrders || []).map(o => ({
+        id: o.id.toString(),
+        toolName: o.toolName,
+        quantity: o.quantity,
+        taskId: o.faultId ? o.faultId.toString() : null,
+        isDelivered: o.isDelivered || false,
+        status: o.isDelivered ? "completed" : "pending",
+        createdAt: o.date || o.orderDate || o.createdAt || new Date().toISOString(),
+        createdAt: o.date || o.orderDate || o.createdAt || new Date().toISOString(),
+        _backendData: o
+      }));
+      setToolRequests(normalizedOrders);
+    } catch (error) {
+      console.error("Hiba az eszközrendelések lekérésekor:", error);
+      setToolRequests([]); // Ha a szerverről lekérés hibára fut, töröljük a beragadt memóriát
+    }
+  };
+
   // Initialize database from localStorage
   useEffect(() => {
     // Mivel az állapotok most már rögtön inicializáláskor (lazy init) betöltődnek a localStorage-ból,
@@ -186,6 +242,7 @@ export const AuthProvider = ({ children }) => {
       fetchUsersFromBackend(); // Userek betöltése backendről automatikusan
       fetchTasksFromBackend(); // Feladatok betöltése backendről automatikusan
       fetchFacilityDataFromBackend(); // Helyiségek és berendezések betöltése
+      fetchToolRequestsFromBackend(); // Eszközrendelések szinkronizálása a backenddel
     }
   }, []);
 
@@ -241,10 +298,10 @@ export const AuthProvider = ({ children }) => {
     return input.replace(/[^a-zA-Z0-9\s\-áéíóöőúüűÁÉÍÓÖŐÚÜŰ.,]/g, "").trim();
   };
 
-  const register = async (email, password, name, role, specialization = "", premiseId = null) => {
-    // Only sanitize name and specialization (Login.js already sanitizes email)
+  const register = async (email, password, name, role, specialization = [], premiseId = null) => {
+    // Only sanitize name (Login.js already sanitizes email)
     name = sanitizeInput(name);
-    specialization = sanitizeInput(specialization);
+    if (typeof specialization === 'string') specialization = sanitizeInput(specialization);
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -276,9 +333,16 @@ export const AuthProvider = ({ children }) => {
           email, password, name: name.trim(), dormRoomId: premiseId ? parseInt(premiseId) : 1 
         });
       } else if (role === ROLES.KARBANTARTAS) {
-        let specId = specialization ? parseInt(specialization) : null;
+        let specIds = [];
+        if (Array.isArray(specialization)) {
+          specIds = specialization.map(id => parseInt(id)).filter(id => !isNaN(id));
+        } else if (specialization) {
+          const parsed = parseInt(specialization);
+          if (!isNaN(parsed)) specIds = [parsed];
+        }
+        
         newUser = await userAPI.createMaintainer({
-          email, password, name: name.trim(), specialisationIds: specId ? [specId] : []
+          email, password, name: name.trim(), specialisationIds: specIds
         });
       } else if (role === ROLES.ADMINISZTRATOR) {
         newUser = await userAPI.createAdministrator({
@@ -314,12 +378,13 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("hibavonal_current_user", JSON.stringify(foundUser));
       setUser(foundUser);
       fetchUsersFromBackend(); // Lista frissítése sikeres belépés után
-      fetchTasksFromBackend(); // Feladatok betöltése
+      fetchTasksFromBackend(foundUser); // Feladatok betöltése
       fetchFacilityDataFromBackend(); // Helyiségek és berendezések betöltése
+      fetchToolRequestsFromBackend(foundUser); // Eszközrendelések betöltése
       return foundUser;
     } catch (error) {
       console.error("Login Error from backend:", error);
-      throw new Error("Invalid email or password");
+      throw new Error("Hibás e-mail cím vagy jelszó!");
     }
   };
 
@@ -343,11 +408,14 @@ export const AuthProvider = ({ children }) => {
     try {
       // Megkeressük a feladatot a helyi state-ben
       const task = tasks.find((t) => t.id === taskId);
+      let specIdToSet = null;
+      let specNameToSet = task ? task.specialization : 'Egyéb';
 
       // Ha backendből jött, frissítjük a C# API-n is
       if (task && task._backendData) {
         if (assigneeId) {
           await faultAPI.assignMaintainer(taskId, assigneeId);
+          specIdToSet = task._backendData.specializationId || task._backendData.specialisationId || null;
         }
       }
 
@@ -355,7 +423,7 @@ export const AuthProvider = ({ children }) => {
       setTasks(
         tasks.map((t) =>
           t.id === taskId
-            ? { ...t, assignedTo: assigneeId.toString(), status: "in_progress" }
+            ? { ...t, assignedTo: assigneeId.toString(), status: "in_progress", specialization: specNameToSet !== 'Egyéb' ? specNameToSet : t.specialization, _backendData: { ...t._backendData, specializationId: specIdToSet || t._backendData?.specializationId, assignedMaintenanceId: assigneeId } }
             : t,
         ),
       );
@@ -368,11 +436,21 @@ export const AuthProvider = ({ children }) => {
   const updateTaskStatus = async (taskId, isCompleted) => {
     try {
       const task = tasks.find((t) => t.id === taskId);
+      const newStatusInt = isCompleted ? 3 : 1; // 3 = Repaired, 1 = InProgress
+      const newStatusStr = isCompleted ? "Repaired" : "InProgress";
 
       if (task && task._backendData) {
-        // C# Enum stringként (JsonStringEnumConverter miatt ezt várja a backend)
-        const newStatus = isCompleted ? "Repaired" : "InProgress";
-        await faultAPI.updateStatus(taskId, { status: newStatus });
+        try {
+          // A C# Enumokat biztosabb számként (int) beküldeni, hogy a backend deserializer ne dobja el az értéket!
+          await faultAPI.updateStatus(taskId, { status: newStatusInt, Status: newStatusInt });
+        } catch (e) {
+          try {
+            await faultAPI.updateStatus(taskId, { status: newStatusStr, Status: newStatusStr });
+          } catch (e2) {
+            // Frontend Workaround: Teljes Update hívás, ha a státusz végpont hiányzik
+            await faultAPI.update(taskId, { ...task._backendData, status: newStatusInt, Status: newStatusInt });
+          }
+        }
       }
 
       setTasks(
@@ -383,6 +461,7 @@ export const AuthProvider = ({ children }) => {
                 completed: isCompleted,
                 status: isCompleted ? "completed" : "in_progress",
                 completedAt: isCompleted ? new Date().toISOString() : null,
+                _backendData: t._backendData ? { ...t._backendData, status: newStatusInt } : t._backendData
               }
             : t,
         ),
@@ -393,12 +472,70 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const setTaskAwaitingParts = async (taskId) => {
+    try {
+      const task = tasks.find((t) => t.id === taskId);
+      if (task && task._backendData) {
+        try {
+          // AwaitingParts Enum értéke: 2
+          await faultAPI.updateStatus(taskId, { status: 2, Status: 2 });
+        } catch (e) {
+          try {
+            await faultAPI.updateStatus(taskId, { status: "AwaitingParts", Status: "AwaitingParts" });
+          } catch (e2) {
+            await faultAPI.update(taskId, { ...task._backendData, status: 2, Status: 2 });
+          }
+        }
+      }
+      setTasks(
+        tasks.map((t) =>
+          t.id === taskId
+            ? { ...t, status: "in_progress", _backendData: { ...t._backendData, status: 2 } }
+            : t
+        )
+      );
+    } catch (err) {
+      console.error("Hiba a feladat státuszának frissítésekor:", err);
+      throw new Error("Nem sikerült frissíteni a hiba állapotát: " + err.message);
+    }
+  };
+
+  const setTaskUnrepairable = async (taskId) => {
+    try {
+      const task = tasks.find((t) => t.id === taskId);
+      if (task && task._backendData) {
+        try {
+          // Unrepairable Enum értéke: 4
+          await faultAPI.updateStatus(taskId, { status: 4, Status: 4 });
+        } catch (e) {
+          try {
+            await faultAPI.updateStatus(taskId, { status: "Unrepairable", Status: "Unrepairable" });
+          } catch (e2) {
+            await faultAPI.update(taskId, { ...task._backendData, status: 4, Status: 4 });
+          }
+        }
+      }
+      setTasks(
+        tasks.map((t) =>
+          t.id === taskId
+            ? { ...t, completed: true, status: "completed", completedAt: new Date().toISOString(), _backendData: { ...t._backendData, status: 4 } }
+            : t
+        )
+      );
+    } catch (err) {
+      console.error("Hiba a feladat státuszának frissítésekor:", err);
+      throw new Error("Nem sikerült frissíteni a hiba állapotát: " + err.message);
+    }
+  };
+
   const createTask = async (
     title,
     description,
     assignedTo = "",
     location,
     specialization,
+    applianceId = null,
+    attachmentName = "nincs_kep.jpg"
   ) => {
     try {
       // 1. Érvényes Egyetemista (Collegiate) keresése
@@ -417,14 +554,16 @@ export const AuthProvider = ({ children }) => {
       }
 
       // 2. Érvényes Helyiség (Premise) keresése
-      let validPremiseId = null;
-      try {
-        const premises = await premiseAPI.getAll();
-        if (premises && premises.length > 0) {
-          validPremiseId = premises[0].id;
+      let validPremiseId = location ? parseInt(location) : null;
+      if (!validPremiseId) {
+        try {
+          const premisesData = await premiseAPI.getAll();
+          if (premisesData && premisesData.length > 0) {
+            validPremiseId = premisesData[0].id;
+          }
+        } catch (e) {
+          console.warn("Helyiségek lekérése sikertelen.");
         }
-      } catch (e) {
-        console.warn("Helyiségek lekérése sikertelen.");
       }
 
       if (!validPremiseId) {
@@ -432,11 +571,19 @@ export const AuthProvider = ({ children }) => {
       }
 
       // 3. Érvényes Szakterület (Specialization) keresése
-      let specId = null;
-      if (specialization && specialization !== 'Egyéb') {
+      let specId = parseInt(specialization);
+      if (isNaN(specId)) specId = null;
+
+      if (!specId && specialization && specialization !== 'Egyéb') {
         try {
-          const specs = await specialisationAPI.getAll();
-          const matchedSpec = specs.find(s => s.name === specialization);
+          let specsData = specializations;
+          if (!specsData || specsData.length === 0) {
+            specsData = JSON.parse(localStorage.getItem("hibavonal_specializations")) || [];
+          }
+          if (!specsData || specsData.length === 0) {
+            specsData = await specialisationAPI.getAll();
+          }
+          const matchedSpec = specsData.find(s => s.name === specialization || String(s.id) === String(specialization));
           if (matchedSpec) specId = matchedSpec.id;
         } catch (e) {
           console.warn("Szakterületek lekérése sikertelen.");
@@ -444,13 +591,18 @@ export const AuthProvider = ({ children }) => {
       }
 
       const newFault = {
-        description: title + (description ? " - " + description : ""),
+        name: title,
+        description: description,
         date: new Date().toISOString(),
         collegiateId: validCollegiateId, 
         premiseId: validPremiseId,
         specializationId: specId,
+        specialisationId: specId, // Biztonsági tartalék (z vs s különbség a C# DTO-ban)
+        maintainerSpecializationId: specId, // További tartalék
+        maintainerSpecialisationId: specId, // További tartalék
+        applianceId: applianceId ? parseInt(applianceId) : null,
         status: 0, // Visszaállítva számra (0 = Pending), ez a legbiztosabb a C# Enum-oknál
-        attachment: "nincs_kep.jpg"
+        attachment: attachmentName || "nincs_kep.jpg"
       };
 
       await faultAPI.create(validCollegiateId, newFault);
@@ -536,6 +688,15 @@ export const AuthProvider = ({ children }) => {
           }
         } else {
           throw new Error("A szerver elutasította a módosítást: " + err.message);
+        }
+      }
+
+      // FRONTEND AUTOMATIZÁCIÓ: Ha az alkatrész megérkezett, a hibát visszatesszük "Folyamatban" (InProgress) állapotba
+      if (requestToApprove.taskId) {
+        try {
+          await updateTaskStatus(requestToApprove.taskId, false);
+        } catch (e) {
+          console.warn("Nem sikerült a hibát automatikusan folyamatban lévőre állítani.", e);
         }
       }
     }
@@ -696,6 +857,68 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateTaskDetails = async (taskId, name, description, attachment = "nincs_kep.jpg") => {
+    try {
+      const payload = {
+        Name: name,
+        Description: description,
+        Attachment: attachment
+      };
+      await faultAPI.update(taskId, payload);
+
+      setTasks((prevTasks) =>
+        prevTasks.map((t) =>
+          t.id === taskId
+            ? {
+                ...t,
+                title: name,
+                name: name,
+                description: description,
+                _backendData: {
+                  ...t._backendData,
+                  name: name,
+                  description: description,
+                  attachment: attachment
+                }
+              }
+            : t
+        )
+      );
+    } catch (err) {
+      console.error("Hiba a feladat frissítésekor:", err);
+      throw new Error("Nem sikerült frissíteni a hibát: " + err.message);
+    }
+  };
+
+  const updateTaskSpecialization = async (taskId, specializationId) => {
+    try {
+      const task = tasks.find((t) => t.id === taskId);
+      const specIdInt = specializationId ? parseInt(specializationId) : null;
+      let specName = 'Egyéb';
+      if (specIdInt) {
+        const specData = specializations.find(s => String(s.id) === String(specializationId));
+        if (specData) specName = specData.name;
+      }
+
+      if (task && task._backendData) {
+        if (specIdInt !== null) {
+          await faultAPI.setSpecialisation(taskId, specIdInt);
+        }
+      }
+
+      setTasks((prevTasks) =>
+        prevTasks.map((t) =>
+          t.id === taskId
+            ? { ...t, specialization: specName, _backendData: { ...t._backendData, specializationId: specIdInt, specialisationId: specIdInt } }
+            : t
+        )
+      );
+    } catch (err) {
+      console.error("Hiba a szakterület frissítésekor:", err);
+      throw new Error("Nem sikerült frissíteni a szakterületet: " + err.message);
+    }
+  };
+
   const deleteFeedback = async (feedbackId, taskId) => {
     try {
       await feedbackAPI.delete(feedbackId);
@@ -764,7 +987,32 @@ export const AuthProvider = ({ children }) => {
       await userAPI.changeRole(userId, roleEnum);
       await fetchUsersFromBackend(); // Lista frissítése
     } catch (err) {
-      throw new Error(err.message || "Hiba a szerepkör módosításakor.");
+      if (err.message.includes('404')) {
+        console.warn("A backend /User/ChangeUserRole végpontja hiányzik (404). Csak a felületen (memóriában) frissítjük a szerepkört.");
+        setUsers(users.map(u => String(u.id) === String(userId) ? { ...u, role: newRole } : u));
+      } else {
+        throw new Error(err.message || "Hiba a szerepkör módosításakor.");
+      }
+    }
+  };
+
+  const updateProfile = async (name, email) => {
+    try {
+      await userAPI.updateProfile(user.id, { name, email });
+      const updatedUser = { ...user, name, email };
+      setUser(updatedUser);
+      localStorage.setItem("hibavonal_current_user", JSON.stringify(updatedUser));
+      fetchUsersFromBackend();
+    } catch (err) {
+      throw new Error(err.message || "Hiba a profil frissítésekor.");
+    }
+  };
+
+  const changePassword = async (currentPassword, newPassword) => {
+    try {
+      await userAPI.changePassword(user.id, { currentPassword, newPassword });
+    } catch (err) {
+      throw new Error(err.message || "Hiba a jelszó módosításakor.");
     }
   };
 
@@ -779,6 +1027,15 @@ export const AuthProvider = ({ children }) => {
       return newAppliance;
     } catch (err) {
       throw new Error(err.message || "Hiba a berendezés létrehozásakor.");
+    }
+  };
+
+  const updateAppliance = async (applianceId, name, premiseId) => {
+    try {
+      await applianceAPI.update(applianceId, { name, premiseId: premiseId ? parseInt(premiseId) : null });
+      await fetchFacilityDataFromBackend(); // Lista frissítése
+    } catch (err) {
+      throw new Error(err.message || "Hiba a berendezés frissítésekor.");
     }
   };
 
@@ -847,7 +1104,11 @@ export const AuthProvider = ({ children }) => {
     createTask,
     assignTask,
     updateTaskStatus,
+    setTaskAwaitingParts,
+    setTaskUnrepairable,
     deleteTask,
+    updateTaskSpecialization,
+    updateTaskDetails,
     addFeedback,
     createToolRequest,
     approveToolRequest,
@@ -868,10 +1129,13 @@ export const AuthProvider = ({ children }) => {
     deleteAppliance,
     assignApplianceToPremise,
     removeApplianceFromPremise,
+    updateAppliance,
     createSpecialization,
     updateSpecialization,
     deleteSpecialization,
     deleteFeedback,
+    updateProfile,
+    changePassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
