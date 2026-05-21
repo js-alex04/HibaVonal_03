@@ -2,12 +2,10 @@ using AutoMapper;
 using HibaVonal_03.Context;
 using HibaVonal_03.DTOs;
 using HibaVonal_03.Interfaces;
-using HibaVonal_03.Profiles;
 using HibaVonal_03.Repositories;
 using HibaVonal_03.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
@@ -160,7 +158,8 @@ namespace HibaVonal_03
                 try
                 {
                     var context = services.GetRequiredService<HibaVonalDbContext>();
-                    HibaVonal_03.Data.DbInitializer.Initialize(context);
+                    context.Database.Migrate();
+                    Data.DbInitializer.Seed(context);
                 }
                 catch (Exception ex)
                 {

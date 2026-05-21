@@ -1,4 +1,5 @@
 ﻿using HibaVonal_03.Interfaces;
+using HibaVonal_03.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -67,6 +68,27 @@ namespace HibaVonal_03.Controllers.Maintainer
                 return BadRequest(ex.Message);
             }
         }
+
+        // Karbantartó szakterületeinek módosítása
+        [HttpPut("{maintainerId}")]
+        [Authorize(Roles = "Administrator")]
+        public async Task<IActionResult> UpdateMaintainerSpecialisations(int maintainerId, [FromBody] List<int> specialisationIds)
+        {
+            try
+            {
+                await _maintainerService.UpdateMaintainerSpecialisationsAsync(maintainerId, specialisationIds);
+                return Ok();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
 
         // Elérhetőség (betegség, szabadság stb.) módosítása
         [HttpPut("{maintainerId}")]

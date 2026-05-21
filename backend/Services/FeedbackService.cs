@@ -2,9 +2,9 @@
 using Microsoft.EntityFrameworkCore;
 using AutoMapper.QueryableExtensions;
 using HibaVonal_03.DTOs;
+using HibaVonal_03.Entities;
 using HibaVonal_03.Interfaces;
 using HibaVonal_03.Repositories;
-using HibaVonal_03.Entities;
 
 namespace HibaVonal_03.Services
 {
@@ -41,7 +41,8 @@ namespace HibaVonal_03.Services
         // Update
         public async Task<FeedbackResponseDto> UpdateFeedbackAsync(int feedbackId, FeedbackUpdateDto feedback)
         {
-            var existingFeedback = await _unitOfWork.FeedbackRepository.GetByIdAsync(feedbackId)
+            var existingFeedback = await _unitOfWork.FeedbackRepository.GetQueryable()
+                .Include(f => f.Fault).SingleOrDefaultAsync(f => f.Id == feedbackId)
                 ?? throw new KeyNotFoundException($"A visszajelzés a megadott azonosítóval ({feedbackId}) nem található.");
 
             _mapper.Map(feedback, existingFeedback);

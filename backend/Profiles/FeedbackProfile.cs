@@ -13,6 +13,7 @@ namespace HibaVonal_03.Profiles
                 .ForMember(dest => dest.CollegiateEmail, opt => opt.MapFrom(src => src.Fault.Collegiate.Email));
 
             CreateMap<FeedbackCreateDto, Feedback>();
+            CreateMap<FeedbackUpdateDto, Feedback>();
         }
     }
 }

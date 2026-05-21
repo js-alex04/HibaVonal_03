@@ -1,6 +1,4 @@
 ﻿using HibaVonal_03.DTOs;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace HibaVonal_03.Interfaces
 {

@@ -1,16 +1,19 @@
-import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import EgyetemistaDashboard from './roles/EgyetemistaDashboard';
-import KarbantartoDashboard from './roles/KarbantartoDashboard';
-import KarbantartasVezetoDashboard from './roles/KarbantartasVezetoDashboard';
-import AdminisztratoriDashboard from './roles/AdminisztratoriDashboard';
-import ProfileDashboard from './ProfileDashboard';
-import '../styles/Dashboard.css';
+import React, { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import AdministratorDashboard from "./roles/AdministratorDashboard";
+import CollegiateDashboard from "./roles/CollegiateDashboard";
+import MaintenanceManagerDashboard from "./roles/MaintenanceManagerDashboard";
+import MaintainerDashboard from "./roles/MaintainerDashboard";
+import ProfileDashboard from "./ProfileDashboard";
+import PermissionsInfoModal from "./PermissionsInfoModal";
+import "../styles/Dashboard.css";
 
 const Dashboard = () => {
   const { user, logout, ROLES } = useAuth();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState("overview");
   const [showProfile, setShowProfile] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [managerPage, setManagerPage] = useState(1);
 
   const renderDashboard = () => {
     if (showProfile) {
@@ -18,13 +21,13 @@ const Dashboard = () => {
     }
     switch (user.role) {
       case ROLES.EGYETEMISTA:
-        return <EgyetemistaDashboard />;
+        return <CollegiateDashboard />;
       case ROLES.KARBANTARTAS:
-        return <KarbantartoDashboard />;
+        return <MaintainerDashboard />;
       case ROLES.KARBANTARTAS_VEZETO:
-        return <KarbantartasVezetoDashboard />;
+        return <MaintenanceManagerDashboard currentPage={managerPage} />;
       case ROLES.ADMINISZTRATOR:
-        return <AdminisztratoriDashboard />;
+        return <AdministratorDashboard />;
       default:
         return <div>Unknown role</div>;
     }
@@ -37,20 +40,56 @@ const Dashboard = () => {
           <h1>Hibavonal</h1>
           <span className="role-badge">{user.role}</span>
         </div>
+
+        {user.role === ROLES.KARBANTARTAS_VEZETO && !showProfile && (
+          <div className="header-center">
+            <button
+              className="pagination-btn"
+              onClick={() => setManagerPage((p) => Math.max(1, p - 1))}
+              disabled={managerPage === 1}
+            >
+              &lt;
+            </button>
+            <span className="page-info">{managerPage}. oldal</span>
+            <button
+              className="pagination-btn"
+              onClick={() => setManagerPage((p) => Math.min(2, p + 1))}
+              disabled={managerPage >= 2}
+            >
+              &gt;
+            </button>
+          </div>
+        )}
+
         <div className="header-right">
           <span className="user-info">Üdvözlünk, {user.name}</span>
+          <button
+            className="btn-icon"
+            onClick={() => setShowInfoModal(true)}
+            title="Információ a jogosultságokról"
+          >
+            ℹ️
+          </button>
+          <button
+            className="btn-icon"
+            onClick={() => setShowProfile(true)}
+            title="Profil beállítások"
+          >
+            ⚙️
+          </button>
           <button onClick={logout} className="btn-logout">
             Kijelentkezés
-          </button>
-          <button className="btn-primary" onClick={() => setShowProfile(true)} style={{ marginLeft: '10px', padding: '6px 12px' }}>
-            ⚙️ Profil
           </button>
         </div>
       </header>
 
-      <div className="dashboard-content">
-        {renderDashboard()}
-      </div>
+      <div className="dashboard-content">{renderDashboard()}</div>
+      {showInfoModal && (
+        <PermissionsInfoModal
+          role={user.role}
+          onClose={() => setShowInfoModal(false)}
+        />
+      )}
     </div>
   );
 };

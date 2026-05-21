@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace HibaVonal_03.Entities
+﻿namespace HibaVonal_03.Entities
 {
     public enum FaultStatus
     {

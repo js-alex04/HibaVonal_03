@@ -127,25 +127,6 @@ namespace HibaVonal_03.Controllers.ToolOrder
             }
         }
 
-        [HttpPut("{toolOrderId}")]
-        [Authorize(Roles = "MaintenanceManager")]
-        public async Task<IActionResult> UpdateToolOrder(int toolOrderId, [FromBody] ToolOrderUpdateDto body)
-        {
-            try
-            {
-                var result = await _toolOrderService.UpdateToolOrderAsync(toolOrderId, body);
-                return Ok(result);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
-
         [HttpPut("{toolOrderId}/delivery-status")]
         [Authorize(Roles = "MaintenanceManager")]
         public async Task<IActionResult> UpdateDeliveryStatus(int toolOrderId, bool isDelivered)

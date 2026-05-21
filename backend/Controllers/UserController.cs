@@ -191,12 +191,12 @@ namespace HibaVonal_03.Controllers
 
         [HttpPut("{userId}/change-role")]
         [Authorize(Roles = "Administrator")]
-        public async Task<IActionResult> ChangeUserRole(int userId, Role newRole)
+        public async Task<IActionResult> ChangeUserRole(int userId, [FromQuery] Role newRole, [FromQuery] int? dormRoomId = null)
         {
             try
             {
-                await _userService.ChangeUserRoleAsync(userId, newRole);
-                return NoContent();
+                await _userService.ChangeUserRoleAsync(userId, newRole, dormRoomId);
+                return Ok(new { message = "Szerepkör sikeresen módosítva." });
             }
             catch (KeyNotFoundException ex)
             {

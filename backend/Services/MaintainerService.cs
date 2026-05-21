@@ -5,6 +5,7 @@ using HibaVonal_03.DTOs;
 using HibaVonal_03.Entities;
 using HibaVonal_03.Interfaces;
 using HibaVonal_03.Repositories;
+using Microsoft.OpenApi.Writers;
 
 namespace HibaVonal_03.Services
 {
@@ -44,6 +45,32 @@ namespace HibaVonal_03.Services
                 .ProjectTo<MaintainerResponseDto>(_mapper.ConfigurationProvider)
                 .ToListAsync();
         }
+
+        public async Task<MaintainerResponseDto> UpdateMaintainerSpecialisationsAsync(int maintainerId, List<int> specialisationIds)
+        {
+            var maintainer = await _unitOfWork.MaintainerRepository.GetQueryable()
+                .Include(m => m.MaintenanceSpecialisation)
+                .FirstOrDefaultAsync(m => m.Id == maintainerId)
+                ?? throw new KeyNotFoundException($"A karbantartó a megadott azonosítóval ({maintainerId}) nem található.");
+
+            var newSpecialisations = await _unitOfWork.MaintainerSpecialisationRepository.GetQueryable()
+                .Where(s => specialisationIds.Contains(s.Id))
+                .ToListAsync();
+
+            if (newSpecialisations.Count != specialisationIds.Count)
+                throw new KeyNotFoundException("Egy vagy több megadott szakterület azonosító érvénytelen.");
+
+            maintainer.MaintenanceSpecialisation.Clear();
+            foreach (var spec in newSpecialisations)
+            {
+                maintainer.MaintenanceSpecialisation.Add(spec);
+            }
+
+            await _unitOfWork.SaveChangesAsync();
+
+            return _mapper.Map<MaintainerResponseDto>(maintainer);
+        }
+
 
         public async Task<MaintainerResponseDto> UpdateAvailabilityAsync(int maintainerId, bool isAvailable)
         {

@@ -66,10 +66,18 @@ namespace HibaVonal_03.Services
         public async Task<PremiseResponseDto> UpdatePremiseAsync(int premiseId, PremiseUpdateDto premise)
         {
             // 1. lépés: Lekérjük a meglévő premise-t az adatbázisból az ID alapján
-            var existingPremise = await _unitOfWork.PremiseRepository.GetByIdAsync(premiseId)
+            var existingPremise = await _unitOfWork.PremiseRepository.GetQueryable()
+                .Include(p => p.Residents)
+                .FirstOrDefaultAsync(p => p.Id == premiseId)
                 ?? throw new KeyNotFoundException($"A helyiség a megadott azonosítóval ({premiseId}) nem található.");
 
-            // 2. lépés: Mappeljük a DTO-t a meglévő entitásra
+            if (existingPremise.Residents != null && existingPremise.Residents.Any())
+            {
+                throw new InvalidOperationException(
+                    $"A helyiség nem módosítható, mert {existingPremise.Residents.Count} lakó van hozzárendelve. Előbb költöztesse át őket!");
+            }
+
+            // 3. lépés: Mappeljük a DTO-t a meglévő entitásra
             _mapper.Map(premise, existingPremise);
 
             _unitOfWork.PremiseRepository.Update(existingPremise);
@@ -88,16 +96,34 @@ namespace HibaVonal_03.Services
                 .FirstOrDefaultAsync(p => p.Id == premiseId)
                 ?? throw new KeyNotFoundException($"A helyiség a megadott azonosítóval ({premiseId}) nem található.");
 
+            // Lakók ellenőrzése
             if (premiseToDelete.Residents != null && premiseToDelete.Residents.Any())
             {
                 throw new InvalidOperationException(
                     $"A helyiség nem törölhető, mert {premiseToDelete.Residents.Count} lakó van hozzárendelve. Előbb költöztesse át őket!");
             }
 
-            // 2. lépés: Töröljük a helyiséget az adatbázisból
+            // Berendezések ellenőrzése
+            if (premiseToDelete.Appliances != null && premiseToDelete.Appliances.Any())
+            {
+                throw new InvalidOperationException(
+                    $"A helyiség nem törölhető, mert {premiseToDelete.Appliances.Count} berendezés van hozzárendelve. Előbb törölje vagy helyezze át őket!");
+            }
+
+            // Hibajelentések ellenőrzése
+            bool hasFaults = await _unitOfWork.FaultRepository.GetQueryable()
+                .AnyAsync(f => f.PremiseId == premiseId);
+
+            if (hasFaults)
+            {
+                throw new InvalidOperationException("A helyiség nem törölhető, mert már korábban bejelentettek ide egy vagy több hibát!");
+            }
+
+            // 2. lépés: Ha minden tiszta, töröljük a helyiséget az adatbázisból
             _unitOfWork.PremiseRepository.Delete(premiseToDelete);
             await _unitOfWork.SaveChangesAsync();
         }
+
 
         public async Task<PremiseResponseDto> AddApplianceToPremiseAsync(int premiseId, int applianceId)
         {

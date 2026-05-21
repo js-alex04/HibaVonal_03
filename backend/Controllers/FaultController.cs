@@ -137,7 +137,7 @@ namespace HibaVonal_03.Controllers.Fault
         }
 
         [HttpPut("{faultId}")]
-        [Authorize(Roles = "Collegiate,MaintenanceManager")]
+        [Authorize(Roles = "Collegiate")]
         public async Task<ActionResult> UpdateFault(int faultId, [FromBody] FaultUpdateDto fault)
         {
             try

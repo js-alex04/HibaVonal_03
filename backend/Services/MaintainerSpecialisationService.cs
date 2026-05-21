@@ -28,9 +28,7 @@ namespace HibaVonal_03.Services
 
 
             if (existingSpecialisations.Any())
-            {
                 throw new InvalidOperationException($"A karbantartói szakterület a megadott névvel ({maintainerSpecialisation.Name}) már létezik.");
-            }
 
             // 2. lépés: Létrehozzuk a MaintainerSpecialisation entitást a DTO alapján
             var newSpecialisation = _mapper.Map<MaintainerSpecialisation>(maintainerSpecialisation);

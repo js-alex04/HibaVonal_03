@@ -1,11 +1,12 @@
 ﻿using AutoMapper;
-using Microsoft.EntityFrameworkCore;
 using AutoMapper.QueryableExtensions;
 using BCrypt.Net;
+using HibaVonal_03.Context;
 using HibaVonal_03.DTOs;
 using HibaVonal_03.Entities;
 using HibaVonal_03.Interfaces;
 using HibaVonal_03.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -18,12 +19,14 @@ namespace HibaVonal_03.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IConfiguration _configuration;
+        private readonly HibaVonalDbContext _context;
 
-        public UserService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration)
+        public UserService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, HibaVonalDbContext context)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _configuration = configuration;
+            _context = context;
         }
 
         public async Task<UserResponseDto> CreateAdministratorAsync(UserCreateDto dto)
@@ -175,6 +178,13 @@ namespace HibaVonal_03.Services
             var existingUser = await _unitOfWork.UserRepository.GetByIdAsync(userId)
                 ?? throw new KeyNotFoundException($"A felhasználó a megadott azonosítóval ({userId}) nem található.");
 
+            var existingEmail = await _unitOfWork.UserRepository.GetQueryable()
+                .Where(u => u.Email == dto.Email && u.Id != userId)
+                .SingleOrDefaultAsync();
+
+            if (existingEmail != null)
+                throw new InvalidOperationException("Ez az email cím már foglalt!");
+
             existingUser.Name = dto.Name;
             existingUser.Email = dto.Email;
 
@@ -198,18 +208,67 @@ namespace HibaVonal_03.Services
             await _unitOfWork.SaveChangesAsync();
         }
 
-        public async Task ChangeUserRoleAsync(int userId, Role newRole)
+        public async Task ChangeUserRoleAsync(int userId, Role newRole, int? dormRoomId = null)
         {
             var user = await _unitOfWork.UserRepository.GetByIdAsync(userId)
                 ?? throw new KeyNotFoundException($"A felhasználó a megadott azonosítóval ({userId}) nem található.");
 
-            if (user.Role == newRole)
+            if (user.Role == newRole && newRole != Role.Collegiate)
                 throw new InvalidOperationException($"A felhasználó már rendelkezik a megadott szerepkörrel ({newRole}).");
 
-            user.Role = newRole;
-            _unitOfWork.UserRepository.Update(user);
-            await _unitOfWork.SaveChangesAsync();
+            // --- 1. SZOBA MEGHATÁROZÁSA (Ha kollégista lesz) ---
+            int? targetRoomId = null;
+            if (newRole == Role.Collegiate)
+            {
+                // Ha jött a frontendről szoba azonosító, azt használjuk, különben az alapértelmezettet keressük
+                if (dormRoomId.HasValue)
+                {
+                    targetRoomId = dormRoomId.Value;
+                }
+                else
+                {
+                    var defaultRoom = await _context.Premises
+                        .Where(p => p.Type == PremiseType.PrivateRoom)
+                        .FirstOrDefaultAsync()
+                        ?? throw new InvalidOperationException("Nem hozható létre kollégista, mert még nincs egyetlen privát szoba sem az adatbázisban!");
+
+                    targetRoomId = defaultRoom.Id;
+                }
+            }
+
+            bool? isAvailable = newRole == Role.Maintainer ? true : null;
+
+            // --- TRANZAKCIÓ INDÍTÁSA ---
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                // --- 2. KAPCSOLATOK TAKARÍTÁSA (Ha korábban karbantartó volt) ---
+                if (user.Role == Role.Maintainer && newRole != Role.Maintainer)
+                {
+                    await _context.Database.ExecuteSqlRawAsync(
+                        "DELETE FROM MaintainerSpecialisationAssignments WHERE MaintainersId = {0}", userId);
+
+                    await _context.Database.ExecuteSqlRawAsync(
+                        "UPDATE Faults SET AssignedMaintenanceId = NULL WHERE AssignedMaintenanceId = {0}", userId);
+                }
+
+                // --- 3. USERS TÁBLA FRISSÍTÉSE --- 
+                string updateSql = 
+                    @"UPDATE Users SET Role = {0}, DormRoomId = {2}, IsAvailable = {3} WHERE Id = {1}";
+
+                await _context.Database.ExecuteSqlRawAsync(updateSql, (int)newRole, userId, targetRoomId, isAvailable);
+
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
+
+
 
         public async Task DeleteUserAsync(int userId)
         {

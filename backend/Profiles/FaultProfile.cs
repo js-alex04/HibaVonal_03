@@ -1,6 +1,6 @@
-﻿using HibaVonal_03.DTOs;
+﻿using AutoMapper;
+using HibaVonal_03.DTOs;
 using HibaVonal_03.Entities;
-using AutoMapper;
 
 namespace HibaVonal_03.Profiles
 {
@@ -25,6 +25,7 @@ namespace HibaVonal_03.Profiles
                     opt => opt.MapFrom(src => src.AssignedMaintenance != null ? src.AssignedMaintenance.Email : null));
 
             CreateMap<FaultCreateDto, Fault>();
+            CreateMap<FaultUpdateDto, Fault>();
         }
     }
 }

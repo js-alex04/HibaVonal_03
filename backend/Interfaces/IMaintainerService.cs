@@ -7,6 +7,7 @@ namespace HibaVonal_03.Interfaces
         Task<List<MaintainerResponseDto>> GetAllMaintainersAsync();
         Task<MaintainerResponseDto> GetMaintainerByIdAsync(int maintainerId);
         Task<List<MaintainerResponseDto>> GetMaintainersBySpecialisationIdAsync(int specialisationId);
+        Task<MaintainerResponseDto> UpdateMaintainerSpecialisationsAsync(int maintainerId, List<int> specialisationIds);
         Task<MaintainerResponseDto> UpdateAvailabilityAsync(int maintainerId, bool isAvailable);
     }
 }

@@ -110,25 +110,53 @@ textarea {
 .password-input-wrapper input {
   flex: 1;
   padding-right: 50px;
+  padding-right: 80px;
 }
 
 .toggle-password-btn {
   position: absolute;
   right: 12px;
   background: none;
+  right: 1px;
+  top: 1px;
+  bottom: 1px;
+  background: #e2e8f0;
   border: none;
   cursor: pointer;
   font-size: 13px;
   padding: 6px 10px;
   color: #667eea;
+  font-size: 0.8rem;
+  padding: 0 12px;
+  color: #4a5568;
   font-weight: 600;
   transition: all 0.2s;
   user-select: none;
+  transition: background-color 0.2s;
+  border-radius: 0 5px 5px 0;
 }
 
 .toggle-password-btn:hover {
   color: #764ba2;
   transform: scale(1.05);
+  background: #cbd5e0;
+}
+
+.modern-form .form-group .toggle-password-btn {
+  border-radius: 0 8px 8px 0;
+}
+
+.profile-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  gap: 20px;
+  align-items: start;
+  align-items: stretch;
+}
+
+.profile-layout > .modern-card {
+  min-width: 0; /* Megakadályozza a Grid oszlopok kilógását kisebb felbontáson */
 }
 
 /* Tasks List */
@@ -223,12 +251,23 @@ textarea {
   border-radius: 5px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:disabled,
+.modern-form .btn-primary:disabled {
+  background: #cbd5e0;
+  color: #a0aec0;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .btn-approve {
@@ -471,7 +510,11 @@ textarea {
 }
 
 .info-section {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(102, 126, 234, 0.05) 0%,
+    rgba(118, 75, 162, 0.05) 100%
+  );
 }
 
 .info-section h3 {
@@ -854,4 +897,325 @@ textarea {
 .status-completed {
   background: #e8f5e9;
   color: #388e3c;
+}
+
+/* Collegiate Modern Layout (Login-style) */
+.collegiate-dashboard {
+  padding: 10px 0;
+}
+
+.collegiate-split-layout {
+  display: flex;
+  flex-direction: row;
+  gap: 30px;
+  align-items: flex-start;
+  align-items: stretch;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.collegiate-form-section {
+  flex: 0 0 400px;
+  position: sticky;
+  top: 20px;
+  height: fit-content;
+}
+
+.collegiate-list-wrapper {
+  flex: 1;
+  position: relative;
+  min-width: 0;
+}
+
+.collegiate-list-section {
+  flex: 1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.modern-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px 25px;
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.05),
+    0 10px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.modern-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 10px 15px rgba(0, 0, 0, 0.07),
+    0 20px 40px rgba(0, 0, 0, 0.07);
+}
+
+.modern-task-card {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.05),
+    0 4px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  margin-bottom: 15px;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.modern-task-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 6px 10px rgba(0, 0, 0, 0.07),
+    0 10px 20px rgba(0, 0, 0, 0.07);
+  border-color: #cbd5e0;
+}
+
+.modern-gradient-text {
+  font-size: 1.8rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 0 25px 0;
+  border-bottom: none !important;
+}
+
+.modern-form .form-group label {
+  color: #4a5568;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+.modern-form .form-group input,
+.modern-form .form-group select,
+.modern-form .form-group textarea {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  background-color: #f8fafc;
+}
+
+.modern-form .form-group input:focus,
+.modern-form .form-group select:focus,
+.modern-form .form-group textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+  background-color: white;
+}
+
+.modern-form .btn-primary {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-top: 10px;
+}
+
+.modern-filter-controls {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox: görgetősáv elrejtése */
+  gap: 10px;
+  margin-bottom: 25px;
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.modern-filter-controls-manager {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox: görgetősáv elrejtése */
+  gap: 10px;
+  margin-bottom: 25px;
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+}
+
+.modern-filter-controls::-webkit-scrollbar {
+  display: none; /* Chrome/Safari: görgetősáv elrejtése */
+}
+
+.modern-filter-btn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: #edf2f7;
+  color: #4a5568;
+  border: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.modern-filter-btn:hover {
+  background: #e2e8f0;
+}
+
+.modern-filter-btn.active {
+  background: #667eea;
+  color: white;
+  box-shadow: 0 4px 6px rgba(102, 126, 234, 0.25);
+}
+
+@media (max-width: 900px) {
+  .profile-layout {
+    gap: 12px;
+    grid-template-columns: 1fr;
+  }
+  .modern-card {
+    padding: 20px 15px;
+  }
+  .modern-form .form-group input,
+  .modern-form .form-group select,
+  .modern-form .form-group textarea {
+    padding: 10px 12px;
+    font-size: 0.95rem;
+  }
+  .collegiate-split-layout {
+    flex-direction: column;
+  }
+  .collegiate-form-section {
+    flex: none;
+    width: 100%;
+    position: static;
+  }
+  .collegiate-list-wrapper {
+    position: static;
+    display: flex;
+    flex-direction: column;
+  }
+  .collegiate-list-section {
+    position: static;
+  }
+}
+
+/* Modal Styles (from Login/Collegiate) */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: modal-fade-in 0.3s ease-out;
+}
+
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-content {
+  position: relative;
+  animation: modal-slide-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes modal-slide-in {
+  from {
+    transform: translateY(-30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.close-modal-btn {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 2.5rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #a0aec0;
+  transition:
+    color 0.2s,
+    transform 0.2s;
+  padding: 0;
+}
+
+.close-modal-btn:hover {
+  color: #4a5568;
+  transform: scale(1.1);
+}
+
+/* Toast Message */
+.toast-message {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(51, 51, 51, 0.9);
+  color: white;
+  background-color: #c6f6d5;
+  color: #2f855a;
+  border: 1px solid #9ae6b4;
+  padding: 12px 24px;
+  border-radius: 50px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(47, 133, 90, 0.2);
+  z-index: 9999;
+  animation: fade-in-up 0.3s ease-out;
+}
+
+.toast-message.toast-error {
+  background-color: #fed7d7;
+  color: #c53030;
+  border-color: #fc8181;
+  box-shadow: 0 4px 12px rgba(197, 48, 48, 0.2);
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }

@@ -5,7 +5,6 @@ using HibaVonal_03.DTOs;
 using HibaVonal_03.Entities;
 using HibaVonal_03.Interfaces;
 using HibaVonal_03.Repositories;
-using System.Linq;
 
 namespace HibaVonal_03.Services
 {
@@ -25,6 +24,17 @@ namespace HibaVonal_03.Services
         // Create
         public async Task<FaultResponseDto> CreateFaultAsync(FaultCreateDto fault, int collegiateId)
         {
+            //A kollégista csak a saját szobájában vagy a közös helyiségekben tapasztalt hibákat jelentheti,
+            //ezért ellenőrizzük, hogy a megadott helyiség valóban a kollégista szobája vagy egy közös helyiség-e.
+            var collegiate = await _unitOfWork.UserRepository.GetByIdAsync(collegiateId)
+                ?? throw new KeyNotFoundException($"A kollégista a megadott azonosítóval ({collegiateId}) nem található.");
+
+            var premise = await _unitOfWork.PremiseRepository.GetByIdAsync(fault.PremiseId)
+                ?? throw new KeyNotFoundException($"A helyiség a megadott azonosítóval ({fault.PremiseId}) nem található.");
+
+            if (!(premise.Residents.Any(r => r.Id == collegiateId)) && premise.Type != PremiseType.CommonPlace)
+                throw new InvalidOperationException("A kollégista csak a saját szobájában vagy a közös helyiségekben tapasztalt hibákat jelentheti.");
+
             var newFault = _mapper.Map<Fault>(fault);
 
             newFault.CollegiateId = collegiateId;
